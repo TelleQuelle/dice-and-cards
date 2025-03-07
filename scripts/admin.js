@@ -95,7 +95,8 @@ async function addSpecialItem() {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to add item');
+            const errorText = await response.text();
+            throw new Error(errorText || 'Failed to add item');
         }
 
         console.log('Item added successfully!');

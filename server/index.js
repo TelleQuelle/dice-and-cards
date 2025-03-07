@@ -250,23 +250,33 @@ app.get('/api/special-items', (req, res) => {
 });
 
 app.post('/api/add-special-item', (req, res) => {
-    const { walletAddress, id, type, name, description, effect, cost, rarity, appliesTo, images } = req.body;
-    if (walletAddress !== 'HVMaVhxKX6dLP1yLnkzH3ikRgDG1vqn2zP9PcXuYvZZH') {
-        res.status(403).send('Unauthorized');
-        return;
-    }
-    db.run(
-        `INSERT INTO special_items (id, type, name, description, effect, cost, rarity, appliesTo, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [id, type, name, description, effect, cost, rarity, appliesTo, JSON.stringify(images)],
-        (err) => {
-            if (err) {
-                console.error('Error adding special item:', err);
-                res.status(500).send('Error adding item');
-            } else {
-                res.send('Item added successfully');
-            }
+    const { id, type, name, cost, rarity, description, effect, appliesTo, images } = req.body;
+
+    // Проверяем, существует ли уже такой ID
+    db.get('SELECT id FROM special_items WHERE id = ?', [id], (err, row) => {
+        if (err) {
+            console.error('Error checking item existence:', err);
+            return res.status(500).send('Server error');
         }
-    );
+        if (row) {
+            return res.status(400).send('Item with this ID already exists');
+        }
+
+        // Если ID уникален, добавляем предмет
+        db.run(
+            `INSERT INTO special_items (id, type, name, cost, rarity, description, effect, appliesTo, images) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, type, name, cost, rarity, description, effect, appliesTo, JSON.stringify(images)],
+            (err) => {
+                if (err) {
+                    console.error('Error inserting special item:', err);
+                    res.status(500).send('Error adding special item');
+                } else {
+                    res.send('Special item added');
+                }
+            }
+        );
+    });
 });
 
 app.post('/api/upload-image', upload.single('image'), (req, res) => {
