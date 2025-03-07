@@ -1,26 +1,28 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
-const multer = require('multer');
 const path = require('path');
+const multer = require('multer');
+
 const app = express();
+const port = 3000;
+
+// Настройка базы данных SQLite
 const db = new sqlite3.Database('./database.db');
 
 // Настройка multer для сохранения файлов в public/images
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'public/images'); // Папка для сохранения
+        cb(null, 'public/images');
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname)); // Уникальное имя файла
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
 const upload = multer({ storage: storage });
 
+app.use(express.static('public'));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..')));
 
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
