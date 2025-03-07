@@ -10,96 +10,33 @@ function openShop() {
     }
 }
 
-function updateShopDisplay() {
-    const goldDisplay = document.getElementById('shop-gold');
-    const cardSkinsContainer = document.getElementById('card-skins');
-    const diceSkinsContainer = document.getElementById('dice-skins');
-    const specialCardsContainer = document.getElementById('special-cards');
-    const specialDiceContainer = document.getElementById('special-dice');
+async function updateShopDisplay() {
+    console.log('Opening Shop');
+    const shopScreen = document.getElementById('shop-screen');
+    if (shopScreen) {
+        console.log('Shop screen found, updating display');
+        const response = await fetch('/api/special-items');
+        const items = await response.json();
+        const shopItemsContainer = document.getElementById('shop-items');
+        shopItemsContainer.innerHTML = '';
 
-    if (goldDisplay) goldDisplay.textContent = window.playerProgress.gold || 0;
+        items.forEach(item => {
+            const isSpecial = item.description || item.effect;
+            const itemElement = document.createElement('div');
+            itemElement.className = 'shop-item';
 
-    fetch('/api/special-items')
-        .then(response => response.json())
-        .then(items => {
-            cardSkinsContainer.innerHTML = '';
-            diceSkinsContainer.innerHTML = '';
-            specialCardsContainer.innerHTML = '';
-            specialDiceContainer.innerHTML = '';
-
-            const inventory = window.playerProgress.inventory || [];
-            const groupedItems = {};
-            items.forEach(item => {
-                const baseName = item.name.split(' of ')[0];
-                if (!groupedItems[baseName]) groupedItems[baseName] = [];
-                groupedItems[baseName].push(item);
-            });
-
-            Object.keys(groupedItems).forEach(baseName => {
-                const group = groupedItems[baseName];
-                const isCardGroup = group[0].type === 'card' && group.length > 1;
-                const container = group[0].type === 'card' ?
-                    (group[0].id.includes('special-card') ? specialCardsContainer : cardSkinsContainer) :
-                    ((group[0].effect || group[0].description) ? specialDiceContainer : diceSkinsContainer);
-
-                if (isCardGroup) {
-                    const groupDiv = document.createElement('div');
-                    groupDiv.className = 'shop-item-group';
-                    group.forEach(item => {
-                        const images = JSON.parse(item.images || '{}');
-                        const shopImage = images.shop || 'images/default-item.png';
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'shop-item';
-                        itemDiv.setAttribute('data-id', item.id);
-                        itemDiv.setAttribute('data-cost', item.cost);
-                        itemDiv.setAttribute('data-applies-to', item.appliesTo);
-                        itemDiv.setAttribute('data-rarity', item.rarity);
-                        const suit = item.appliesTo.slice(-1);
-                        const isSpecial = item.id.includes('special-card') && (item.description || item.effect);
-                        itemDiv.innerHTML = `
-                            <img src="/${shopImage}" alt="${item.name}" class="shop-image card-image" onerror="this.src='/images/default-item.png'">
-                            <span>${suit} - ${item.cost} Gold</span>
-                            // Пример внутри шаблона для специальных предметов
-                            ${isSpecial ? `<button onclick="showDescriptionModal('${item.description}')">Description</button>` : ''}
-                            <button ${inventory.includes(item.id) ? 'disabled' : ''}>
-                                ${inventory.includes(item.id) ? 'Owned' : 'Buy'}
-                            </button>
-                        `;
-                        if (!inventory.includes(item.id)) {
-                            itemDiv.querySelector('button:last-child').onclick = () => buyItem(item.id, item.cost);
-                        }
-                        groupDiv.appendChild(itemDiv);
-                    });
-                    container.appendChild(groupDiv);
-                } else {
-                    group.forEach(item => {
-                        const images = JSON.parse(item.images || '{}');
-                        const shopImage = images.shop || 'images/default-item.png';
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'shop-item';
-                        itemDiv.setAttribute('data-id', item.id);
-                        itemDiv.setAttribute('data-cost', item.cost);
-                        itemDiv.setAttribute('data-applies-to', item.appliesTo);
-                        itemDiv.setAttribute('data-rarity', item.rarity);
-                        const isSpecial = (item.effect || item.description);
-                        itemDiv.innerHTML = `
-                            <img src="/${shopImage}" alt="${item.name}" class="${item.type === 'card' ? 'card-image' : 'dice-image'} shop-image" onerror="this.src='/images/default-item.png'">
-                            <span>${item.name} (${item.rarity})</span>
-                            ${isSpecial ? `<button onclick="showDescriptionModal('${item.description}', event)">Description</button>` : ''}
-                            <span>${item.cost} Gold</span>
-                            <button ${inventory.includes(item.id) ? 'disabled' : ''}>
-                                ${inventory.includes(item.id) ? 'Owned' : 'Buy'}
-                            </button>
-                        `;
-                        if (!inventory.includes(item.id)) {
-                            itemDiv.querySelector('button:last-child').onclick = () => buyItem(item.id, item.cost);
-                        }
-                        container.appendChild(itemDiv);
-                    });
-                }
-            });
-        })
-        .catch(err => console.error('Error loading shop items:', err));
+            // Используем существующий файл, если изображения нет
+            const imageSrc = item.images && item.images.shop ? item.images.shop : '/images/dice-skin-1.jpg';
+            itemElement.innerHTML = `
+                <img src="${imageSrc}" alt="${item.name}" onerror="this.src='/images/dice-skin-1.jpg';">
+                <h3>${item.name}</h3>
+                <p>Cost: ${item.cost} Gold</p>
+                ${isSpecial ? `<button onclick="showDescription('${item.description}')">Description</button>` : ''}
+                <button onclick="buyItem('${item.id}')">Buy</button>
+            `;
+            shopItemsContainer.appendChild(itemElement);
+        });
+    }
 }
 
 function showDescriptionModal(description) {

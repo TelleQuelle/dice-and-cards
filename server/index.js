@@ -284,6 +284,7 @@ app.post('/api/add-special-item', (req, res) => {
     });
 });
 
+// Маршрут для загрузки изображений
 app.post('/api/upload-image', upload.single('image'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
