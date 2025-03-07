@@ -25,7 +25,6 @@ async function updateShopDisplay() {
             const itemElement = document.createElement('div');
             itemElement.className = 'shop-item';
 
-            // Используем существующий файл по умолчанию
             const imageSrc = item.images && item.images.shop ? item.images.shop : '/images/dice-skin-1.jpg';
             itemElement.innerHTML = `
                 <img src="${imageSrc}" alt="${item.name}" onerror="this.src='/images/dice-skin-1.jpg'; this.onerror=null;">
