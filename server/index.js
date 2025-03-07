@@ -9,6 +9,7 @@ const port = 3000;
 // Настройка базы данных SQLite
 const db = new sqlite3.Database('./database.db');
 
+
 // Настройка multer для сохранения файлов в public/images
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
