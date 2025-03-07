@@ -1,19 +1,22 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const multer = require('multer');
 const path = require('path');
 const app = express();
 const db = new sqlite3.Database('./database.db');
 
-// Настройка multer с сохранением расширения .png
+// Настройка multer для сохранения файлов в public/images
 const storage = multer.diskStorage({
-    destination: 'public/images/',
+    destination: (req, file, cb) => {
+        cb(null, 'public/images'); // Папка для сохранения
+    },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + '.png');
+        cb(null, uniqueSuffix + path.extname(file.originalname)); // Уникальное имя файла
     }
 });
-
 const upload = multer({ storage: storage });
 
 app.use(express.json());
@@ -281,10 +284,9 @@ app.post('/api/add-special-item', (req, res) => {
 
 app.post('/api/upload-image', upload.single('image'), (req, res) => {
     if (!req.file) {
-        res.status(400).send('No file uploaded');
-        return;
+        return res.status(400).json({ error: 'No file uploaded' });
     }
-    const filePath = `images/${req.file.filename}`;
+    const filePath = `/images/${req.file.filename}`;
     res.json({ path: filePath });
 });
 

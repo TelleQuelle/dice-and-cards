@@ -59,6 +59,7 @@ async function addSpecialItem() {
         for (const input of imageInputs) {
             const file = input.files[0];
             if (file) {
+                console.log('Uploading image:', file.name);
                 const formData = new FormData();
                 formData.append('image', file);
                 const response = await fetch('/api/upload-image', {
@@ -67,8 +68,10 @@ async function addSpecialItem() {
                 });
                 const data = await response.json();
                 if (!data.path) {
+                    console.error('Image upload failed:', data.error || 'No path returned');
                     throw new Error('Image upload failed');
                 }
+                console.log('Image uploaded successfully:', data.path);
                 const key = input.getAttribute('data-key') || 'shop';
                 images[key] = data.path;
             }
