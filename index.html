@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dice and Cards: Medieval Quest</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/game.css">
+</head>
+<body>
+    <div id="game-container">
+        <p id="game-message"></p>
+        <div id="profile-screen" class="profile-container">
+            <h2>Link Your Solana Wallet ⚔️</h2>
+            <p>Connect your wallet to begin your journey:</p>
+            <div id="wallet-connect"><button>Connect Wallet</button></div>
+            <p id="wallet-address" style="display: none;">Connected: <span id="address"></span></p>
+            <input type="text" id="player-name" placeholder="Your Name (optional)" maxlength="20" style="display: none;">
+            <button id="create-profile" style="display: none;">Start Journey ⚔️</button> <!-- Убрали onclick -->
+        </div>
+        <div id="tutorial" class="tutorial-container" style="display: none;">
+            <!-- Шаг 1 -->
+            <div class="tutorial-step" id="step1" style="display: none;">
+                <h2>Welcome to Dice and Cards! 🏰</h2>
+                <p>Hello, brave adventurer! 🌟 In this medieval journey, you’ll use dice and cards to earn points and prove your worth.</p>
+                <p>Your goal? Reach a target score before your turns run out! It’s a game of luck, strategy, and a little bit of courage. 😊</p>
+                <p>Don’t worry — I’ll guide you step-by-step so you’ll be ready to face the challenge! Let’s get started.</p>
+                <button onclick="nextStep(2)">Next</button>
+            </div>
+    
+            <!-- Шаг 2 -->
+            <div class="tutorial-step" id="step2" style="display: none;">
+                <h2>Rolling Dice and Drawing Cards 🎲🃏</h2>
+                <p>Every turn starts with action! You’ll roll two six-sided dice (they’re called "d6" because they have 6 sides). 🎲🎲</p>
+                <p>Then, you’ll draw three random cards from a deck of 52 — think of it like pulling treasures from a chest! 🃏</p>
+                <p>You’ll see both dice numbers and all three cards. Pick ONE die to use — this choice decides which cards you can play with. Smart moves win the day! 😉</p>
+                <button onclick="previousStep(1)">Previous</button>
+                <button onclick="nextStep(3)">Next</button>
+            </div>
+    
+            <!-- Шаг 3 -->
+            <div class="tutorial-step" id="step3" style="display: none;">
+                <h2>Scoring Points and Taking Risks 💰⚡</h2>
+                <p>Now the fun begins! Based on the die you picked, choose cards that match its “valid combinations” to earn points. Each die has its own special card list (you can check it anytime in-game). 📜</p>
+                <p>Want more points? Draw extra cards! But beware — if a new card doesn’t fit, your turn ends, and you lose all points for that round. 😱 Risky, right?</p>
+                <p>You can stop anytime to keep your points safe. It’s up to you to balance greed and caution! ⚖️</p>
+                <button onclick="previousStep(2)">Previous</button>
+                <button onclick="nextStep(4)">Next</button>
+            </div>
+    
+            <!-- Шаг 4 -->
+            <div class="tutorial-step" id="step4" style="display: none;">
+                <h2>Ready to Begin? ⚔️</h2>
+                <p>You’ve got the basics down! Roll dice, pick cards, score points, and watch out for risks. Easy, yet thrilling! 😄</p>
+                <p>The adventure awaits with dark castles, epic quests, and a touch of medieval magic. Ready to test your fate?</p>
+                <p>Hit “Start” to jump in, или “Skip” if you’re feeling bold! Let’s go! 🏹</p>
+                <button onclick="previousStep(3)">Previous</button>
+                <button id="startTutorialBtn">Start 🚀</button>
+                <button id="skipTutorialBtn">Skip</button>
+            </div>
+        </div>
+    
+        <!-- Вступление -->
+        <div id="introduction" class="introduction-container" style="display: none;">
+            <!-- Экран 1 -->
+            <div class="intro-step" id="intro1">
+                <img src="images/intro1.png" alt="Dark Castle" class="intro-image">
+                <h2>The Fallen Kingdom</h2>
+                <p>In a land shrouded in mist, a once-mighty kingdom lies in ruins. 🏰</p>
+                <p>Legends speak of a cursed deck of cards and enchanted dice, wielded by a forgotten sorcerer to challenge fate itself. ⚔️</p>
+                <p>You, a lone wanderer, have stumbled upon these relics. Will you reclaim the lost glory?</p>
+                <button onclick="nextIntro(2)">Next</button>
+            </div>
+    
+            <!-- Экран 2 -->
+            <div class="intro-step" id="intro2" style="display: none;">
+                <img src="images/intro2.png" alt="Mysterious Figure" class="intro-image">
+                <h2>The Sorcerer’s Challenge</h2>
+                <p>A shadowy figure whispers from the void: “Prove your worth, mortal.” 🌑</p>
+                <p>With every roll and every card, you’ll face destiny head-on. The stakes are high, but the rewards are greater. 💰</p>
+                <p>Take up the dice. Draw your fate. The journey begins now!</p>
+                <button onclick="previousIntro(1)">Previous</button>
+                <button onclick="startMainMenu()">Begin</button>
+            </div>
+        </div>
+
+        <!-- Главное меню -->
+        <div id="main-menu" class="menu-container" style="display: none;">
+            <img src="images/menu-bg.png" alt="Medieval Banner" class="menu-image">
+            <h1 id="main-menu-title">Dice and Cards: Medieval Quest</h1>
+            <p>Choose your path, wanderer... 🏰</p>
+            <p>Gold: <span id="main-menu-gold">0</span></p>
+            <button onclick="startCampaign()">Campaign ⚔️</button>
+            <button onclick="openShop()">Shop 💰</button>
+            <button onclick="openInventory()">Inventory 🎒</button>
+            <button onclick="openAbout()">About 📜</button>
+            <button onclick="resetProgress()">Reset Progress 🔄</button>
+            <button onclick="disconnectWallet()">Disconnect Wallet 🔌</button>
+            <div class="social-icons">
+                <a href="https://discord.gg/tdMWdrwCSD" target="_blank">
+                    <img src="images/discord-icon.png" alt="Discord" class="social-icon">
+                </a>
+                <a href="https://x.com/Nanti_NFT" target="_blank">
+                    <img src="images/twitter-icon.png" alt="Twitter" class="social-icon">
+                </a>
+            </div>
+        </div>
+    <div id="about-screen" class="about-container" style="display: none;">
+        <h2>About Dice and Cards 📜</h2>
+        <p>Dice and Cards: Medieval Quest — это игра, где вы используете кубики и карты, чтобы заработать очки и пройти испытания загадочного средневекового мира.</p>
+        <p>Ваша цель — набрать определённое количество очков за ограниченное число ходов, балансируя между удачей и стратегией.</p>
+        <button onclick="showTutorialStep(1)">View Tutorial 📚</button>
+        <button onclick="startMainMenu()">Back ⬅️</button>
+    </div>
+    <div id="shop-screen" class="shop-container" style="display: none;">
+        <h2>Shop 🏪</h2>
+        <p>Gold: <span id="shop-gold">0</span></p>
+        <div class="shop-categories">
+            <h3>Card Skins</h3>
+            <div id="card-skins" class="shop-items">
+                <div class="shop-item-group">
+                    <div class="shop-item" data-id="dragon-ace-spades" data-rarity="Rare" data-cost="300" data-applies-to="A♠">
+                        <img src="images/dragon-ace.jpg" alt="Dragon Ace of Spades" class="shop-image card-image">
+                        <span>Spades - 300 Gold</span>
+                        <button onclick="buyItem('dragon-ace-spades', 300)">Buy</button>
+                    </div>
+                    <div class="shop-item" data-id="dragon-ace-hearts" data-rarity="Rare" data-cost="300" data-applies-to="A♥">
+                        <img src="images/dragon-ace.jpg" alt="Dragon Ace of Hearts" class="shop-image card-image">
+                        <span>Hearts - 300 Gold</span>
+                        <button onclick="buyItem('dragon-ace-hearts', 300)">Buy</button>
+                    </div>
+                    <div class="shop-item" data-id="dragon-ace-diamonds" data-rarity="Rare" data-cost="300" data-applies-to="A♦">
+                        <img src="images/dragon-ace.jpg" alt="Dragon Ace of Diamonds" class="shop-image card-image">
+                        <span>Diamonds - 300 Gold</span>
+                        <button onclick="buyItem('dragon-ace-diamonds', 300)">Buy</button>
+                    </div>
+                    <div class="shop-item" data-id="dragon-ace-clubs" data-rarity="Rare" data-cost="300" data-applies-to="A♣">
+                        <img src="images/dragon-ace.jpg" alt="Dragon Ace of Clubs" class="shop-image card-image">
+                        <span>Clubs - 300 Gold</span>
+                        <button onclick="buyItem('dragon-ace-clubs', 300)">Buy</button>
+                    </div>
+                </div>
+                <div class="shop-item-group">
+                    <div class="shop-item" data-id="golden-king-spades" data-rarity="Epic" data-cost="500" data-applies-to="K♠">
+                        <img src="images/golden-king.jpg" alt="Golden King of Spades" class="shop-image card-image">
+                        <span>Spades - 500 Gold</span>
+                        <button onclick="buyItem('golden-king-spades', 500)">Buy</button>
+                    </div>
+                    <div class="shop-item" data-id="golden-king-hearts" data-rarity="Epic" data-cost="500" data-applies-to="K♥">
+                        <img src="images/golden-king.jpg" alt="Golden King of Hearts" class="shop-image card-image">
+                        <span>Hearts - 500 Gold</span>
+                        <button onclick="buyItem('golden-king-hearts', 500)">Buy</button>
+                    </div>
+                    <div class="shop-item" data-id="golden-king-diamonds" data-rarity="Epic" data-cost="500" data-applies-to="K♦">
+                        <img src="images/golden-king.jpg" alt="Golden King of Diamonds" class="shop-image card-image">
+                        <span>Diamonds - 500 Gold</span>
+                        <button onclick="buyItem('golden-king-diamonds', 500)">Buy</button>
+                    </div>
+                    <div class="shop-item" data-id="golden-king-clubs" data-rarity="Epic" data-cost="500" data-applies-to="K♣">
+                        <img src="images/golden-king.jpg" alt="Golden King of Clubs" class="shop-image card-image">
+                        <span>Clubs - 500 Gold</span>
+                        <button onclick="buyItem('golden-king-clubs', 500)">Buy</button>
+                    </div>
+                </div>
+            </div>
+    
+            <h3>Dice Skins</h3>
+            <div id="dice-skins" class="shop-items">
+                <div class="shop-item" data-id="dice-skin-1" data-rarity="Common" data-cost="100" data-applies-to="dice">
+                    <img src="images/dice-skin-1.jpg" alt="Wooden Dice Skin" class="shop-image dice-image">
+                    <span>Wooden Dice Skin (Common) - 100 Gold</span>
+                    <button onclick="buyItem('dice-skin-1', 100)">Buy</button>
+                </div>
+                <div class="shop-item" data-id="dice-skin-2" data-rarity="Epic" data-cost="500" data-applies-to="dice">
+                    <img src="images/dice-skin-2.jpg" alt="Dragon Dice Skin" class="shop-image dice-image">
+                    <span>Dragon Dice Skin (Epic) - 500 Gold</span>
+                    <button onclick="buyItem('dice-skin-2', 500)">Buy</button>
+                </div>
+            </div>
+    
+            <h3>Special Cards</h3>
+            <div id="special-cards" class="shop-items">
+                <div class="shop-item-group">
+                    <div class="shop-item" data-id="special-card-1-spades" data-rarity="Rare" data-cost="200" data-applies-to="A♠">
+                        <img src="images/special-card-1.jpg" alt="Lucky Ace of Spades" class="shop-image card-image">
+                        <span>Spades - 200 Gold</span>
+                        <button onclick="buyItem('special-card-1-spades', 200)">Buy</button>
+                    </div>
+                    <div class="shop-item" data-id="special-card-1-hearts" data-rarity="Rare" data-cost="200" data-applies-to="A♥">
+                        <img src="images/special-card-1.jpg" alt="Lucky Ace of Hearts" class="shop-image card-image">
+                        <span>Hearts - 200 Gold</span>
+                        <button onclick="buyItem('special-card-1-hearts', 200)">Buy</button>
+                    </div>
+                    <div class="shop-item" data-id="special-card-1-diamonds" data-rarity="Rare" data-cost="200" data-applies-to="A♦">
+                        <img src="images/special-card-1.jpg" alt="Lucky Ace of Diamonds" class="shop-image card-image">
+                        <span>Diamonds - 200 Gold</span>
+                        <button onclick="buyItem('special-card-1-diamonds', 200)">Buy</button>
+                    </div>
+                    <div class="shop-item" data-id="special-card-1-clubs" data-rarity="Rare" data-cost="200" data-applies-to="A♣">
+                        <img src="images/special-card-1.jpg" alt="Lucky Ace of Clubs" class="shop-image card-image">
+                        <span>Clubs - 200 Gold</span>
+                        <button onclick="buyItem('special-card-1-clubs', 200)">Buy</button>
+                    </div>
+                </div>
+            </div>
+    
+            <h3>Special Dice</h3>
+            <div id="special-dice" class="shop-items"></div>
+            <div id="description-modal" class="modal">
+                <div class="modal-content">
+                    <p id="description-text"></p>
+                    <button onclick="document.getElementById('description-modal').style.display='none'">Закрыть</button>
+                </div>
+            </div>
+        </div>
+        <button onclick="backToMainMenu()">Back ⬅️</button>
+    </div>
+    <div id="admin-panel" class="admin-container" style="display: none;">
+        <h2>Admin Panel ⚙️</h2>
+        <form id="add-item-form">
+            <label for="item-type">Type:</label>
+            <select id="item-type" name="type" onchange="updateImageFields()">
+                <option value="card">Card</option>
+                <option value="dice">Dice</option>
+            </select><br>
+    
+            <label for="item-id">Base ID:</label>
+            <input type="text" id="item-id" name="id" required placeholder="e.g., special-dice-2"><br>
+    
+            <label for="item-name">Name:</label>
+            <input type="text" id="item-name" name="name" required placeholder="e.g., Lucky Dice"><br>
+    
+            <label for="item-description">Description (Special Items Only):</label>
+            <textarea id="item-description" name="description" placeholder="e.g., Rerolls low values (leave empty for skins)"></textarea>
+            <p style="font-size: 12px; color: #d4c2a7;">Leave empty for regular skins; required for special cards/dice.</p><br>
+    
+            <label for="item-effect">Effect:</label>
+            <select id="item-effect" name="effect">
+                <option value="doubleRoll">Double Roll (+1 card next round)</option>
+                <option value="lowChance">Low Chance (higher chance of low values)</option>
+                <option value="highChance">High Chance (higher chance of high values)</option>
+                <option value="evenChance">Even Chance (higher chance of even values)</option>
+                <option value="oddChance">Odd Chance (higher chance of odd values)</option>
+                <option value="scoreMultiplier">Score Multiplier (1.5x points per round)</option>
+                <option value="extraTurn">Extra Turn (+1 turn)</option>
+                <option value="cardBonus">Card Bonus (1.5x points for this card)</option>
+                <option value="wildCard">Wild Card (matches any die)</option>
+                <option value="cardExtraTurn">Card Extra Turn (+1 turn)</option>
+                <option value="goldBoost">Gold Boost (1.25x gold per run)</option>
+                <option value="">None (Skin Only)</option>
+            </select><br>
+    
+            <label for="item-cost">Cost (Gold):</label>
+            <input type="number" id="item-cost" name="cost" required><br>
+    
+            <label for="item-rarity">Rarity:</label>
+            <select id="item-rarity" name="rarity">
+                <option value="Common">Common</option>
+                <option value="Rare">Rare</option>
+                <option value="Epic">Epic</option>
+            </select><br>
+    
+            <label for="item-applies-to">Applies To:</label>
+            <select id="item-applies-to" name="appliesTo">
+                <option value="all-suits" id="all-suits-option">All Suits (Cards)</option>
+                <option value="dice" id="dice-option">Dice</option>
+            </select>
+            <p style="font-size: 12px; color: #d4c2a7;">'All Suits' creates 4 cards; 'Dice' applies to all values.</p><br>
+    
+            <label>Images:</label><br>
+            <div id="image-upload-fields"></div>
+            <button type="submit">Add Item</button>
+        </form>
+        <button onclick="backToMainMenu()">Back ⬅️</button>
+    </div>
+    <div id="inventory-screen" class="inventory-container" style="display: none;">
+        <h2>Inventory 🎒</h2>
+        <p>Gold: <span id="inventory-gold">0</span></p>
+        <div id="inventory-items" class="inventory-items"></div>
+        <button onclick="backToMainMenu()">Back ⬅️</button>
+    </div>
+    <div id="campaign-menu" class="campaign-container" style="display: none;">
+        <h2>Campaign: The Sorcerer’s Trials ⚔️</h2>
+        <p>Select your trial, brave soul...</p>
+        <div class="level-list">
+            <div class="level-item">
+                <span>Level 1: The Ruined Gates</span>
+                <span>Progress: Not Started</span>
+            </div>
+            <div class="level-item locked">
+                <span>Level 2: ᚱᚢᚾᛖᛋ ᚩᚠ ᛗᛁᛋᛏ</span>
+                <span>Locked</span>
+            </div>
+            <div class="level-item locked">
+                <span>Level 3: ᚦᛖ ᛋᚻᚪᛞᚩᚹ ᚱᛁᛋᛖᛋ</span>
+                <span>Locked</span>
+            </div>
+            <div class="level-item locked">
+                <span>Level 4: ᛒᛚᚪᛞᛖ ᚩᚠ ᚠᚪᛏᛖ</span>
+                <span>Locked</span>
+            </div>
+            <div class="level-item locked">
+                <span>Level 5: ᚹᚪᛚᛚᛋ ᚩᚠ ᛞᚩᚩᛗ</span>
+                <span>Locked</span>
+            </div>
+            <div class="level-item locked">
+                <span>Level 6: ᚹᛁᛏᚳᚻᛖᛋ ᚳᚪᛚᛚ</span>
+                <span>Locked</span>
+            </div>
+            <div class="level-item locked">
+                <span>Level 7: ᛁᚱᚩᚾ ᚪᚾᛞ ᛒᛚᚩᚩᛞ</span>
+                <span>Locked</span>
+            </div>
+            <div class="level-item locked">
+                <span>Level 8: ᛞᛖᛈᚦᛋ ᚩᚠ ᚾᛁᚷᚻᛏ</span>
+                <span>Locked</span>
+            </div>
+            <div class="level-item locked">
+                <span>Level 9: ᚷᚪᛏᛖᛋ ᚩᚠ ᛋᚩᚱᚳᛖᚱᚣ</span>
+                <span>Locked</span>
+            </div>
+            <div class="level-item locked">
+                <span>Level 10: ᚠᛁᚾᚪᛚ ᚱᚢᚾᛖ</span>
+                <span>Locked</span>
+            </div>
+        </div>
+        <button onclick="backToMainMenu()">Back ⬅️</button>
+    </div>
+    <div id="level-screen" class="level-container" style="display: none;">
+        <h2>Level <span id="level-number"></span>: <span id="level-name"></span></h2>
+        <p>Goal: Earn <span id="target-score"></span> points in <span id="max-turns"></span> turns.</p>
+        <div id="level-stats" style="display: none;">
+            <p>Status: <span id="level-status">Not Started</span></p>
+            <p>Attempts: <span id="level-attempts">0</span></p>
+            <p>Turns Used: <span id="level-turns-used">0</span></p>
+            <p>Gold Earned: <span id="level-gold-earned">0</span></p>
+        </div>
+        <button onclick="startLevel()">Begin Quest ⚔️</button>
+        <button onclick="showLore()">Lore 📜</button>
+        <button onclick="backToCampaignMenu()">Back ⬅️</button>
+    </div>
+    <div id="lore-screen" class="lore-container" style="display: none;">
+        <h2 id="lore-title">The Tale Unfolds...</h2>
+        <img id="lore-image" src="" alt="Lore Scene" class="lore-image">
+        <p id="lore-text"></p>
+        <button onclick="nextLoreStep()" id="lore-next">Next ➡️</button>
+    </div>
+    <div id="game-screen" class="game-container" style="display: none;">
+        <h2>Level <span id="game-level-number"></span>: <span id="game-level-name"></span></h2>
+        <p>Turn <span id="current-turn">1</span> of <span id="game-max-turns"></span> | Score: <span id="current-score">0</span> / <span id="game-target-score"></span></p>
+        
+        <div class="dice-area">
+            <h3>Dice 🎲</h3>
+            <div id="dice">
+                <div id="die1" class="die" onclick="selectDie(1)"><img src="images/die-default.png" alt="Die 1" class="die-image"></div>
+                <div id="die2" class="die" onclick="selectDie(2)"><img src="images/die-default.png" alt="Die 2" class="die-image"></div>
+            </div>
+            <button onclick="rollDice()" id="roll-button">Roll Dice</button>
+        </div>
+        
+        <div class="cards-area">
+            <h3>Cards 🃏</h3>
+            <div id="cards"></div>
+            <button onclick="drawCard()" id="draw-button" disabled>Draw Card</button>
+        </div>
+        
+        <div class="score-area">
+            <h3>Turn Score: <span id="turn-score">0</span></h3>
+            <p id="combinations"></p>
+        </div>
+
+        <button onclick="showCombinations()" id="combinations-button">View Combinations 📜</button>
+        <button onclick="endTurn()">End Turn ✅</button>
+        <button onclick="backToLevelScreen()">Abandon Quest ⬅️</button>
+        <div id="combinations-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h3>Combinations</h3>
+                <p id="combinations-list"></p>
+                <button onclick="hideCombinations()">Close ⬅️</button>
+            </div>
+        </div>
+        <div id="game-end-overlay" class="overlay" style="display: none;">
+            <div class="overlay-content">
+                <h2 id="game-end-message"></h2>
+            </div>
+        </div>
+    </div>
+    <div id="description-modal" class="modal">
+        <div class="modal-content">
+            <p id="description-text"></p>
+            <button onclick="document.getElementById('description-modal').style.display='none'">Закрыть</button>
+        </div>
+    </div>
+</div>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/gameplay.js"></script>
+    <script src="scripts/shop.js"></script>
+    <script src="scripts/admin.js"></script>
+</body>
+</html>
