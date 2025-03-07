@@ -42,11 +42,15 @@ function updateImageFields() {
 async function addSpecialItem() {
     try {
         // Собираем данные из полей админ-панели
+        const type = document.getElementById('item-type').value;
+        const id = document.getElementById('item-id').value;
         const name = document.getElementById('item-name').value;
         const cost = document.getElementById('item-cost').value;
         const rarity = document.getElementById('item-rarity').value;
         const description = document.getElementById('item-description').value;
-        const imageInputs = document.querySelectorAll('.special-item-image'); // Это для картинок
+        const effect = document.getElementById('item-effect').value;
+        const appliesTo = document.getElementById('item-applies-to').value;
+        const imageInputs = document.querySelectorAll('.special-item-image');
 
         // Объект для хранения путей к картинкам
         const images = {};
@@ -72,12 +76,15 @@ async function addSpecialItem() {
 
         // Собираем данные для отправки на сервер
         const itemData = {
+            id: id,
+            type: type,
             name: name,
             cost: cost,
             rarity: rarity,
             description: description,
-            images: images,
-            type: 'dice' // Это кубик
+            effect: effect,
+            appliesTo: appliesTo,
+            images: images
         };
 
         // Отправляем данные на сервер
