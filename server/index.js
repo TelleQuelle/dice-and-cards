@@ -9,11 +9,10 @@ const port = 3000;
 // Настройка базы данных SQLite
 const db = new sqlite3.Database('./database.db');
 
-
-// Настройка multer для сохранения файлов в public/images
+// Настройка multer для загрузки файлов в images/
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'public/images');
+        cb(null, 'images');
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -22,18 +21,28 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-app.use(express.static('public', {
-    setHeaders: (res, path, stat) => {
-        res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'");
+// Обслуживание статических файлов из корня проекта
+app.use(express.static(path.join(__dirname, '..')));
+
+// Установка правильных MIME-типов для CSS и JS
+app.use((req, res, next) => {
+    if (req.url.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+    } else if (req.url.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
     }
-}));
+    next();
+});
 
-app.use(express.json());
-
+// Настройка Content-Security-Policy (без лишних логов)
 app.use((req, res, next) => {
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'");
-    console.log('CSP updated to allow self, scripts, styles, and images');
     next();
+});
+
+// Маршрут для главной страницы
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
 // Создание таблиц и начальные данные остаются без изменений
@@ -297,8 +306,8 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
     res.json({ path: filePath });
 });
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../index.html'));
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+    console.log('Players table created or already exists.');
+    console.log('Special items table created or already exists.');
 });
-
-app.listen(3000, () => console.log('Server running at http://localhost:3000'));
