@@ -4,6 +4,7 @@ const path = require('path');
 const multer = require('multer');
 
 const app = express();
+app.use(express.json());
 const port = 3000;
 
 // Настройка базы данных SQLite
@@ -229,31 +230,15 @@ app.get('/api/player/:walletAddress', (req, res) => {
 app.post('/api/create-profile', (req, res) => {
     const { walletAddress, playerName, highestLevel, completedLevels, hasSeenTutorial, hasSeenLore, levelStats, gold, inventory, equipped } = req.body;
     console.log('Received profile data:', req.body);
-    db.run(
-        `INSERT OR REPLACE INTO players (walletAddress, playerName, highestLevel, completedLevels, hasSeenTutorial, hasSeenLore, levelStats, gold, inventory, equipped) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-            walletAddress,
-            playerName,
-            highestLevel || 1,
-            JSON.stringify(completedLevels || []),
-            hasSeenTutorial ? 1 : 0,
-            hasSeenLore ? 1 : 0,
-            JSON.stringify(levelStats || {}),
-            gold || 0,
-            JSON.stringify(inventory || []),
-            JSON.stringify(equipped || {})
-        ],
-        (err) => {
-            if (err) {
-                console.error('Error saving profile:', err.message);
-                res.status(500).send('Database error');
-            } else {
-                console.log(`Profile saved for ${walletAddress}`);
-                res.status(200).send('Profile saved');
-            }
-        }
-    );
+    db.run(`INSERT INTO players (walletAddress, playerName, highestLevel, completedLevels, hasSeenTutorial, hasSeenLore, levelStats, gold, inventory, equipped) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+            [walletAddress, playerName, highestLevel, JSON.stringify(completedLevels), hasSeenTutorial, hasSeenLore, JSON.stringify(levelStats), gold, JSON.stringify(inventory), JSON.stringify(equipped)], 
+            function(err) {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+                res.json({ message: 'Profile created successfully', id: this.lastID });
+            });
 });
 
 app.get('/api/special-items', (req, res) => {
