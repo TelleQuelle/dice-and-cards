@@ -22,13 +22,16 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-app.use(express.static('public'));
+app.use(express.static('public', {
+    setHeaders: (res, path, stat) => {
+        res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'");
+    }
+}));
+
 app.use(express.json());
 
 app.use((req, res, next) => {
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'");
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-    res.setHeader('Pragma', 'no-cache');
     console.log('CSP updated to allow self, scripts, styles, and images');
     next();
 });
@@ -292,6 +295,10 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
     }
     const filePath = `/images/${req.file.filename}`;
     res.json({ path: filePath });
+});
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
 });
 
 app.listen(3000, () => console.log('Server running at http://localhost:3000'));
