@@ -27,6 +27,8 @@ app.use(express.json());
 
 app.use((req, res, next) => {
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'");
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
     console.log('CSP updated to allow self, scripts, styles, and images');
     next();
 });
