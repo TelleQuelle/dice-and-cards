@@ -29,7 +29,7 @@ function updateImageFields() {
         const div = document.createElement('div');
         div.innerHTML = `
             <label>${key} Image:</label>
-            <input type="file" class="image-upload" data-key="${key}" accept="image/png, image/jpeg">
+            <input type="file" class="image-upload" data-key="${key}" accept="image/png">
         `;
         container.appendChild(div);
     });
@@ -41,7 +41,6 @@ function updateImageFields() {
 
 async function addSpecialItem() {
     try {
-        // Собираем данные из полей админ-панели
         const type = document.getElementById('item-type').value;
         const id = document.getElementById('item-id').value;
         const name = document.getElementById('item-name').value;
@@ -50,12 +49,20 @@ async function addSpecialItem() {
         const description = document.getElementById('item-description').value;
         const effect = document.getElementById('item-effect').value;
         const appliesTo = document.getElementById('item-applies-to').value;
-        const imageInputs = document.querySelectorAll('.special-item-image');
+        const imageInputs = document.querySelectorAll('.image-upload');
 
-        // Объект для хранения путей к картинкам
+        // Проверка обязательных полей
+        if (!id || !name || !cost || !type || !appliesTo) {
+            window.showMessage('Please fill in all required fields (ID, Name, Cost, Type, Applies To)! 🚫', 'warning');
+            return;
+        }
+        if (isNaN(cost) || Number(cost) <= 0) {
+            window.showMessage('Cost must be a positive number! 🚫', 'warning');
+            return;
+        }
+
         const images = {};
 
-        // Загружаем каждую картинку
         for (const input of imageInputs) {
             const file = input.files[0];
             if (file) {
@@ -66,6 +73,11 @@ async function addSpecialItem() {
                     method: 'POST',
                     body: formData
                 });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Image upload failed:', errorText);
+                    throw new Error('Image upload failed: ' + errorText);
+                }
                 const data = await response.json();
                 if (!data.path) {
                     console.error('Image upload failed:', data.error || 'No path returned');
@@ -77,12 +89,11 @@ async function addSpecialItem() {
             }
         }
 
-        // Собираем данные для отправки на сервер
         const itemData = {
             id: id,
             type: type,
             name: name,
-            cost: cost,
+            cost: Number(cost),
             rarity: rarity,
             description: description,
             effect: effect,
@@ -90,7 +101,6 @@ async function addSpecialItem() {
             images: images
         };
 
-        // Отправляем данные на сервер
         const response = await fetch('/api/add-special-item', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -99,14 +109,16 @@ async function addSpecialItem() {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(errorText || 'Failed to add item');
+            console.error('Server response error:', errorText);
+            throw new Error('Failed to add item: ' + errorText);
         }
 
-        console.log('Item added successfully!');
+        const result = await response.json(); // Проверяем, что сервер возвращает JSON
+        console.log('Item added successfully:', result);
         window.showMessage('Item added successfully', 'success');
     } catch (err) {
-        console.error('Error adding item:', err);
-        window.showMessage('Failed to add item', 'warning');
+        console.error('Error adding item:', err.message);
+        window.showMessage('Failed to add item: ' + err.message, 'warning');
     }
 }
 

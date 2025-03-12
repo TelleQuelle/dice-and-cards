@@ -40,231 +40,6 @@ function debugScreenStates() {
     console.log('Level:', document.getElementById('level-screen')?.style.display);
 }
 
-function hideAllScreens(except) {
-    const screens = [
-        'profile-screen', 'tutorial', 'introduction', 'lore-screen',
-        'main-menu', 'campaign-menu', 'level-screen', 'game-screen', 'about-screen',
-        'shop-screen', 'inventory-screen', 'admin-panel' // Убедимся, что admin-panel включён
-    ];
-    screens.forEach(screen => {
-        const element = document.getElementById(screen);
-        if (element) {
-            element.style.display = screen === except ? 'block' : 'none';
-        }
-    });
-    for (let i = 1; i <= 4; i++) {
-        const step = document.getElementById(`step${i}`);
-        if (step) {
-            step.style.display = (except === 'tutorial' && i === currentTutorialStep) ? 'block' : 'none';
-        }
-    };
-    console.log(`Showing screen: ${except}`);
-    debugScreenStates();
-}
-
-function showTutorialStep(step) {
-    console.log('Entering showTutorialStep with step:', step);
-    try {
-        // Сбрасываем hasSeenTutorial, если вызываем из About
-        const aboutScreen = document.getElementById('about-screen');
-        if (aboutScreen && aboutScreen.style.display === 'block') {
-            window.playerProgress.hasSeenTutorial = false;
-            console.log('Reset hasSeenTutorial for tutorial from About');
-        }
-        currentTutorialStep = step;
-        hideAllScreens('tutorial');
-        const stepElement = document.getElementById(`step${step}`);
-        if (!stepElement) {
-            console.error(`Tutorial step element step${step} not found`);
-        } else {
-            console.log('Step element found:', stepElement);
-        }
-        console.log('Tutorial step shown successfully:', step);
-        setTimeout(() => {
-            console.log('Checking step', step, 'after delay');
-        }, 100);
-    } catch (error) {
-        console.error('Error in showTutorialStep:', error);
-    }
-}
-
-function nextStep(next) {
-    console.log('Moving to next tutorial step:', next);
-    try {
-        showTutorialStep(next);
-    } catch (error) {
-        console.error('Error in nextStep:', error);
-    }
-}
-
-function previousStep(prev) {
-    showTutorialStep(prev);
-}
-
-async function finishTutorial() {
-    console.log('Entering finishTutorial');
-    if (window.playerProgress.hasSeenTutorial) {
-        console.log('Tutorial already finished, skipping');
-        return;
-    }
-    window.playerProgress.hasSeenTutorial = true;
-    console.log('Calling saveProgress from finishTutorial');
-    try {
-        await window.saveProgress();
-        console.log('saveProgress completed in finishTutorial');
-    } catch (error) {
-        console.error('Error in saveProgress during finishTutorial:', error);
-    }
-    if (!window.playerProgress.hasSeenLore) {
-        console.log('Showing introduction from finishTutorial');
-        hideAllScreens('introduction');
-        const intro1 = document.getElementById('intro1');
-        if (intro1) {
-            intro1.style.display = 'block';
-            console.log('Introduction step 1 displayed');
-        } else {
-            console.error('intro1 element not found');
-        }
-    } else {
-        console.log('Calling startMainMenu from finishTutorial');
-        try {
-            await startMainMenu();
-        } catch (error) {
-            console.error('Error in startMainMenu from finishTutorial:', error);
-        }
-    }
-    console.log('finishTutorial completed');
-}
-
-function nextIntro(next) {
-    document.getElementById(`intro${loreStep}`).style.display = 'none';
-    loreStep = next;
-    document.getElementById(`intro${loreStep}`).style.display = 'block';
-}
-
-function previousIntro(prev) {
-    document.getElementById(`intro${loreStep}`).style.display = 'none';
-    loreStep = prev;
-    document.getElementById(`intro${loreStep}`).style.display = 'block';
-}
-
-async function startMainMenu() {
-    console.log('Entering startMainMenu with playerProgress:', window.playerProgress);
-    hideAllScreens('main-menu');
-    console.log('Screens hidden in startMainMenu');
-
-    const titleElement = document.getElementById('main-menu-title');
-    if (titleElement) {
-        console.log('Setting title with playerName:', window.playerProgress.playerName);
-        titleElement.textContent = `Dice and Cards: ${window.playerProgress.playerName || 'Unnamed Wanderer'}'s Quest`;
-        console.log('Main menu title updated:', titleElement.textContent);
-    } else {
-        console.error('main-menu-title element not found');
-    }
-
-    const goldDisplay = document.getElementById('main-menu-gold');
-    if (goldDisplay) {
-        const goldValue = window.playerProgress.gold !== undefined && window.playerProgress.gold !== null ? window.playerProgress.gold : 0;
-        goldDisplay.textContent = goldValue;
-        console.log('Main menu gold set to:', goldValue, 'from playerProgress.gold:', window.playerProgress.gold);
-    } else {
-        console.error('main-menu-gold element not found');
-    }
-
-    try {
-        updateCampaignMenu();
-        console.log('Campaign menu updated in startMainMenu');
-    } catch (error) {
-        console.error('Error in updateCampaignMenu:', error);
-    }
-
-    const adminWallet = 'HVMaVhxKX6dLP1yLnkzH3ikRgDG1vqn2zP9PcXuYvZZH';
-    if (window.playerProgress.walletAddress === adminWallet) {
-        const adminButton = document.createElement('button');
-        adminButton.id = 'admin-button';
-        adminButton.innerHTML = '⚙️'; // Шестерёнка вместо текста
-        adminButton.title = 'Admin Panel'; // Подсказка при наведении
-        adminButton.onclick = openAdminPanel;
-        document.getElementById('main-menu').appendChild(adminButton);
-    }
-
-    if (!window.playerProgress.hasSeenLore) {
-        window.playerProgress.hasSeenLore = true;
-        console.log('Calling saveProgress from startMainMenu');
-        try {
-            await window.saveProgress();
-            console.log('saveProgress completed in startMainMenu with playerProgress:', window.playerProgress);
-        } catch (error) {
-            console.error('Error in saveProgress during startMainMenu:', error);
-        }
-    }
-
-    console.log('startMainMenu completed');
-}
-
-function startCampaign() {
-    hideAllScreens('campaign-menu');
-    updateCampaignMenu();
-}
-
-function backToMainMenu() {
-    hideAllScreens('main-menu');
-    const goldDisplay = document.getElementById('main-menu-gold');
-    if (goldDisplay) {
-        const goldValue = window.playerProgress.gold !== undefined && window.playerProgress.gold !== null ? window.playerProgress.gold : 0;
-        goldDisplay.textContent = goldValue;
-        console.log('Back to main menu, gold updated to:', goldValue, 'from playerProgress.gold:', window.playerProgress.gold);
-    } else {
-        console.error('main-menu-gold element not found in backToMainMenu');
-    }
-}
-
-function openLevel(level) {
-    if (level > window.playerProgress.highestLevel) {
-        showMessage("This level is locked! Complete the previous trials first. 🔒");
-        return;
-    }
-    currentLevel = levels[level - 1];
-    document.getElementById('level-number').textContent = level;
-    document.getElementById('level-name').textContent = currentLevel.name;
-    document.getElementById('target-score').textContent = currentLevel.target;
-    document.getElementById('max-turns').textContent = currentLevel.turns;
-    hideAllScreens('level-screen');
-    if (window.playerProgress.levelStats && window.playerProgress.levelStats[level]) {
-        document.getElementById('level-stats').style.display = 'block';
-        document.getElementById('level-status').textContent = window.playerProgress.levelStats[level].status;
-        document.getElementById('level-attempts').textContent = window.playerProgress.levelStats[level].attempts;
-        document.getElementById('level-turns-used').textContent = window.playerProgress.levelStats[level].turnsUsed;
-        document.getElementById('level-gold-earned').textContent = window.playerProgress.levelStats[level].goldEarned || 0;
-    } else {
-        document.getElementById('level-stats').style.display = 'none';
-    }
-}
-
-function showLore() {
-    loreStep = 1;
-    hideAllScreens('lore-screen');
-    document.getElementById('lore-title').textContent = `The Tale of ${currentLevel.name}`;
-    document.getElementById('lore-text').textContent = currentLevel.lore1;
-    document.getElementById('lore-image').src = currentLevel.image1;
-    document.getElementById('lore-next').textContent = 'Next ➡️';
-}
-
-function nextLoreStep() {
-    if (loreStep === 1) {
-        loreStep = 2;
-        document.getElementById('lore-text').textContent = currentLevel.lore2;
-        document.getElementById('lore-image').src = currentLevel.image2;
-        document.getElementById('lore-next').textContent = 'Return ⬅️';
-    } else {
-        hideAllScreens('level-screen');
-    }
-}
-
-function backToCampaignMenu() {
-    hideAllScreens('campaign-menu');
-}
-
 function resetProgress() {
     window.playerProgress.highestLevel = 1;
     window.playerProgress.completedLevels = [];
@@ -288,6 +63,10 @@ function updateCampaignMenu() {
             const firstSpan = item.querySelector('span:first-child');
             const lastSpan = item.querySelector('span:last-child');
             if (firstSpan && lastSpan) {
+                if (!levels || !levels[level - 1]) {
+                    console.error('Level data not found for level:', level);
+                    return;
+                }
                 firstSpan.textContent = `Level ${level}: ${levels[level - 1].name}`;
                 lastSpan.textContent = window.playerProgress.completedLevels.includes(level) ? "Completed" : "Not Started";
                 item.onclick = () => openLevel(level);
@@ -311,11 +90,6 @@ function updateCampaignMenu() {
     console.log('updateCampaignMenu completed');
 }
 
-function closeDescriptionModal() {
-    const modal = document.getElementById('description-modal');
-    modal.style.display = 'none';
-}
-
 const itemNames = {
     'dragon-ace-spades': 'Dragon Ace of Spades',
     'dragon-ace-hearts': 'Dragon Ace of Hearts',
@@ -334,67 +108,6 @@ const itemNames = {
     'special-dice-1': 'Double Roll Dice'
 };
 
-function openInventory() {
-    console.log('Opening Inventory');
-    hideAllScreens('inventory-screen');
-    const inventoryScreen = document.getElementById('inventory-screen');
-    if (inventoryScreen) {
-        console.log('Inventory screen found, updating display');
-        updateInventoryDisplay();
-    } else {
-        console.error('Inventory screen element not found');
-    }
-}
-
-function updateInventoryDisplay() {
-    const goldDisplay = document.getElementById('inventory-gold');
-    const itemsContainer = document.getElementById('inventory-items');
-    if (goldDisplay) goldDisplay.textContent = window.playerProgress.gold || 0;
-    if (itemsContainer) {
-        itemsContainer.innerHTML = '';
-        const inventory = window.playerProgress.inventory || [];
-        const equipped = window.playerProgress.equipped || {};
-
-        fetch('/api/special-items')
-            .then(response => response.json())
-            .then(items => {
-                inventory.forEach(itemId => {
-                    const item = items.find(i => i.id === itemId);
-                    if (!item) return;
-
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'inventory-item';
-                    const img = document.createElement('img');
-                    const images = JSON.parse(item.images || '{}');
-                    const shopImage = images.shop || 'images/default-item.png';
-                    img.src = shopImage;
-                    img.alt = item.name;
-                    img.className = 'inventory-image';
-                    img.onerror = () => img.src = 'images/default-item.png';
-                    if (item.type === 'dice') {
-                        img.classList.add('dice-image');
-                    } else {
-                        img.classList.add('card-image');
-                    }
-                    const span = document.createElement('span');
-                    span.textContent = item.name;
-                    const equipButton = document.createElement('button');
-                    const isEquipped = Object.values(equipped).includes(itemId);
-                    equipButton.textContent = isEquipped ? 'Equipped' : 'Equip';
-                    equipButton.disabled = isEquipped;
-                    if (!isEquipped) {
-                        equipButton.onclick = () => equipItem(itemId);
-                    }
-                    itemDiv.appendChild(img);
-                    itemDiv.appendChild(span);
-                    itemDiv.appendChild(equipButton);
-                    itemsContainer.appendChild(itemDiv);
-                });
-            })
-            .catch(err => console.error('Error fetching inventory items:', err));
-    }
-}
-
 function equipItem(itemId) {
     console.log('Equipping item:', itemId);
     if (!window.playerProgress.equipped) window.playerProgress.equipped = {};
@@ -407,141 +120,42 @@ function equipItem(itemId) {
     updateInventoryDisplay();
 }
 
-function openAbout() {
-    console.log('Opening About screen');
-    hideAllScreens('about-screen');
-}
-
-const wallet = {
-    connected: false,
-    publicKey: null,
-    connect: async function() {
-        if (window.solana && window.solana.isPhantom) {
-            try {
-                await window.solana.connect();
-                this.connected = true;
-                this.publicKey = window.solana.publicKey.toString();
-                return this.publicKey;
-            } catch (error) {
-                console.error("Wallet connection error:", error);
-                throw error;
+function pageLoaded() {
+    console.log('Page loaded, checking progress');
+    if (window.playerProgress.walletAddress) {
+        console.log('Found saved wallet:', window.playerProgress.walletAddress);
+        loadProgress(window.playerProgress.walletAddress).then(() => {
+            console.log('Loaded playerProgress after loadProgress:', window.playerProgress);
+            // Убираем автоматический запуск туториала
+            if (!window.playerProgress.hasSeenTutorial) {
+                window.playerProgress.hasSeenTutorial = true; // Помечаем, что туториал виден
+                saveProgress(); // Сохраняем изменения
             }
-        } else {
-            throw new Error("Phantom wallet not found!");
-        }
-    },
-    disconnect: function() {
-        if (window.solana && window.solana.isPhantom) {
-            window.solana.disconnect();
-            this.connected = false;
-            this.publicKey = null;
-        }
+            startMainMenu(window.playerProgress);
+        });
+    } else {
+        console.log('No wallet found, showing profile setup');
+        showScreen('profile-setup');
     }
-};
-
-function initializeWallet() {
-    const connectButton = document.getElementById('wallet-connect');
-    const createButton = document.getElementById('create-profile');
-    const walletAddress = document.getElementById('wallet-address');
-    const addressSpan = document.getElementById('address');
-    const playerNameInput = document.getElementById('player-name');
-
-    connectButton.innerHTML = '<button>Connect Wallet</button>';
-    connectButton.querySelector('button').addEventListener('click', async () => {
-        try {
-            const publicKey = await wallet.connect();
-            console.log('Wallet connected:', publicKey);
-            addressSpan.textContent = publicKey.slice(0, 6) + '...' + publicKey.slice(-4);
-            walletAddress.style.display = 'block';
-            playerNameInput.style.display = 'block';
-            createButton.style.display = 'block';
-            connectButton.style.display = 'none';
-        } catch (error) {
-            showMessage("Failed to connect wallet! Install Phantom or check connection. 😞");
-            console.error('Wallet connection error:', error);
-        }
-    });
-
-    createButton.addEventListener('click', async () => {
-        const publicKey = wallet.publicKey;
-        const name = playerNameInput.value.trim() || "Unnamed Wanderer";
-    
-        if (!publicKey) {
-            showMessage("Wallet not connected! 😞");
-            console.log('No wallet connected');
-            return;
-        }
-    
-        const profileData = {
-            walletAddress: publicKey,
-            playerName: name,
-            highestLevel: 1,
-            completedLevels: [],
-            hasSeenTutorial: false,
-            hasSeenLore: false,
-            levelStats: {},
-            gold: 0,
-            inventory: [],
-            equipped: {}
-        };
-    
-        try {
-            console.log('Sending profile data to server:', profileData);
-            const response = await fetch('http://localhost:3000/api/create-profile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(profileData)
-            });
-    
-            if (response.ok) {
-                console.log('Profile saved successfully');
-                window.playerProgress = { ...profileData };
-                localStorage.setItem('lastWalletAddress', publicKey);
-                console.log('Updated playerProgress:', window.playerProgress);
-                try {
-                    await window.saveProgress();
-                    console.log('Progress saved, proceeding to next screen');
-                    await window.loadProgress(publicKey);
-                    console.log('Loaded playerProgress after initialization:', window.playerProgress);
-                } catch (error) {
-                    console.error('Error saving progress in initializeWallet:', error);
-                }
-                if (!window.playerProgress.hasSeenTutorial) {
-                    console.log('Showing tutorial step 1');
-                    showTutorialStep(1);
-                } else if (!window.playerProgress.hasSeenLore) {
-                    console.log('Showing introduction');
-                    hideAllScreens('introduction');
-                    const intro1 = document.getElementById('intro1');
-                    if (intro1) intro1.style.display = 'block';
-                    else console.error('intro1 element not found');
-                } else {
-                    console.log('Starting main menu with loaded progress:', window.playerProgress);
-                    await startMainMenu();
-                }
-            } else {
-                const errorText = await response.text();
-                showMessage("Failed to create profile! Server error: " + errorText);
-                console.error('Server responded with error:', response.status, errorText);
-            }
-        } catch (error) {
-            showMessage("Server not responding! Check if server is running. 😞");
-            console.error('Fetch error:', error.message);
-        }
-    });
 }
 
-function disconnectWallet() {
-    wallet.disconnect();
-    window.playerProgress.walletAddress = "";
-    window.playerProgress.playerName = "";
-    saveProgress();
-    hideAllScreens('profile-screen');
-    document.getElementById('wallet-address').style.display = 'none';
-    document.getElementById('player-name').style.display = 'none';
-    document.getElementById('create-profile').style.display = 'none';
-    document.getElementById('wallet-connect').style.display = 'block';
-    showMessage("Wallet disconnected! Please reconnect to continue... 🔌");
+// Добавляем обработчик для кнопки "View Tutorial"
+document.addEventListener('DOMContentLoaded', () => {
+    const viewTutorialButton = document.getElementById('view-tutorial-button');
+    if (viewTutorialButton) {
+        viewTutorialButton.addEventListener('click', () => {
+            console.log('View Tutorial button clicked');
+            showTutorial();
+        });
+    } else {
+        console.error('view-tutorial-button element not found');
+    }
+});
+
+function showTutorial() {
+    console.log('Showing tutorial');
+    currentTutorialStep = 1;
+    showTutorialStep(currentTutorialStep);
 }
 
 window.addEventListener('load', async () => {
@@ -573,7 +187,7 @@ window.addEventListener('load', async () => {
 
 window.onerror = (msg, url, lineNo, columnNo, error) => {
     console.error('Global error:', msg, 'Line:', lineNo, 'Error:', error);
-    return true; // Предотвращает перезагрузку
+    return false; // Предотвращает перезагрузку
 };
 
 function setupTutorialButtons() {
@@ -620,7 +234,7 @@ function addImageField() {
     const div = document.createElement('div');
     div.innerHTML = `
         <label>${key} Image:</label>
-        <input type="file" class="image-upload" data-key="${key}" accept="image/png, image/jpeg">
+        <input type="file" class="image-upload" data-key="${key}" accept="image/png">
     `;
     container.appendChild(div);
 }

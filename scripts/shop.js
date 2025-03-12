@@ -20,34 +20,48 @@ async function updateShopDisplay() {
         const shopItemsContainer = document.getElementById('shop-items');
         shopItemsContainer.innerHTML = '';
 
+        if (!response.ok) {
+            console.error('Failed to fetch special items:', response.status);
+            window.showMessage("The merchant’s wares are unavailable! Try again later. 😞", "warning");
+            return;
+        }
+
+        if (!Array.isArray(items)) {
+            console.error('Invalid data format for special items');
+            window.showMessage("The merchant’s ledger is corrupted! 😞", "warning");
+            return;
+        }
+
+
         items.forEach(item => {
             const isSpecial = item.description || item.effect;
             const itemElement = document.createElement('div');
             itemElement.className = 'shop-item';
 
-            const imageSrc = item.images && item.images.shop ? item.images.shop : '/images/dice-skin-1.jpg';
+            const images = JSON.parse(item.images || '{}');
+            const imageSrc = images.shop || '/images/dice-skin-1.png';
             itemElement.innerHTML = `
-                <img src="${imageSrc}" alt="${item.name}" onerror="this.src='/images/dice-skin-1.jpg'; this.onerror=null;">
+                <img src="${imageSrc}" alt="${item.name}" onerror="this.src='/images/dice-skin-1.png'; this.onerror=null;">
                 <h3>${item.name}</h3>
                 <p>Cost: ${item.cost} Gold</p>
                 ${isSpecial ? `<button onclick="showDescription('${item.description}')">Description</button>` : ''}
-                <button onclick="buyItem('${item.id}')">Buy</button>
+                <button onclick="buyItem('${item.id}', ${item.cost}, '${item.name}')">Buy</button>
             `;
+            itemElement.setAttribute('data-id', item.id);
             shopItemsContainer.appendChild(itemElement);
         });
     }
 }
 
 function showDescriptionModal(description) {
-    const modal = document.getElementById('description-modal');
+    const modal = document.getElementById('shop-description-modal');
     const text = document.getElementById('description-text');
     text.textContent = description;
     modal.style.display = 'flex';
 }
 
-async function buyItem(itemId, cost) {
+async function buyItem(itemId, cost, itemName) {
     console.log('Attempting to buy item:', itemId, 'Cost:', cost);
-    const itemName = itemNames[itemId] || itemId; // Используем читаемое имя или data-id, если имени нет
     if (window.playerProgress.gold >= cost) {
         window.playerProgress.gold -= cost;
         if (!window.playerProgress.inventory) window.playerProgress.inventory = [];

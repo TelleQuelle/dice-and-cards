@@ -593,3 +593,7 @@ button:hover {
     display: block;
     margin: 0 auto 10px;
 }
+
+#game-description-modal, #shop-description-modal {
+    display: none;
+}

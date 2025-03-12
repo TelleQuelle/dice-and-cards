@@ -63,8 +63,8 @@ window.loadProgress = async function(walletAddress) {
 window.saveProgress = async function() {
     try {
         console.log('Starting saveProgress with data:', window.playerProgress);
-        const response = await fetch('http://localhost:3000/api/create-profile', {
-            method: 'POST',
+        const response = await fetch(`http://localhost:3000/api/player/${window.playerProgress.walletAddress}`, {
+            method: 'PUT', // Используем PUT для обновления вместо POST для создания
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(window.playerProgress)
         });
@@ -78,291 +78,6 @@ window.saveProgress = async function() {
         console.error('Failed to save progress:', error.message);
     }
     console.log('saveProgress completed');
-}
-
-function startLevel(levelNumber) {
-    gameState.currentLevel = levels[levelNumber - 1];
-    gameState.currentTurn = 1;
-    gameState.turnsLeft = gameState.currentLevel.turns;
-    gameState.initialTurns = gameState.currentLevel.turns; // Сохраняем начальное количество ходов
-    gameState.totalScore = 0;
-    gameState.dice = [0, 0];
-    gameState.cards = [];
-    gameState.selectedCards = [];
-    gameState.turnScore = 0;
-    gameState.selectedDie = null;
-    gameState.activeEffects = {};
-
-    showScreen('level-screen');
-    document.getElementById('level-title').textContent = `Level ${levelNumber}`;
-    document.getElementById('level-target').textContent = gameState.currentLevel.target;
-    document.getElementById('current-turn').textContent = gameState.currentTurn;
-    document.getElementById('turns-left').textContent = `${gameState.currentTurn} of ${gameState.initialTurns}`;
-    document.getElementById('current-score').textContent = gameState.totalScore;
-    document.getElementById('turn-score').textContent = gameState.turnScore;
-
-    const equippedSkins = window.playerProgress.equipped || {};
-    const diceSkin = equippedSkins['dice'];
-    fetch('/api/special-items')
-        .then(response => response.json())
-        .then(items => {
-            const item = items.find(i => i.id === diceSkin);
-            const images = item ? JSON.parse(item.images || '{}') : {};
-            const defaultDiceImage = diceSkin && images.default ? images.default : 'images/die-default.png';
-            document.getElementById('die1').querySelector('img').src = defaultDiceImage;
-            document.getElementById('die2').querySelector('img').src = defaultDiceImage;
-        })
-        .catch(err => console.error('Error loading dice skin:', err));
-}
-
-const effectHandlers = {
-    doubleRoll: {
-        roll: baseCount => baseCount + 1,
-        apply: () => {}
-    },
-    lowChance: {
-        rollDie: () => {
-            const roll = Math.random();
-            if (roll < 0.30) return 1;
-            if (roll < 0.525) return 2;
-            if (roll < 0.70) return 3;
-            if (roll < 0.85) return 4;
-            if (roll < 0.95) return 5;
-            return 6;
-        }
-    },
-    highChance: {
-        rollDie: () => {
-            const roll = Math.random();
-            if (roll < 0.30) return 6;
-            if (roll < 0.525) return 5;
-            if (roll < 0.70) return 4;
-            if (roll < 0.85) return 3;
-            if (roll < 0.95) return 2;
-            return 1;
-        }
-    },
-    evenChance: {
-        rollDie: () => {
-            const roll = Math.random();
-            if (roll < 0.25) return 2;
-            if (roll < 0.50) return 4;
-            if (roll < 0.75) return 6;
-            if (roll < 0.833) return 1;
-            if (roll < 0.916) return 3;
-            return 5;
-        }
-    },
-    oddChance: {
-        rollDie: () => {
-            const roll = Math.random();
-            if (roll < 0.25) return 1;
-            if (roll < 0.50) return 3;
-            if (roll < 0.75) return 5;
-            if (roll < 0.833) return 2;
-            if (roll < 0.916) return 4;
-            return 6;
-        }
-    },
-    scoreMultiplier: {
-        score: baseScore => Math.round(baseScore * 1.5),
-        apply: () => {}
-    },
-    extraTurn: {
-        apply: (state) => {
-            state.turnsLeft += 1;
-            state.initialTurns += 1; // Обновляем общее количество ходов
-            document.getElementById('turns-left').textContent = `${state.currentTurn} of ${state.initialTurns}`;
-            window.showMessage("Extra Turn granted! ⚡", "success");
-        }
-    },
-    cardBonus: {
-        cardScore: baseScore => Math.round(baseScore * 1.5),
-        apply: () => {}
-    },
-    wildCard: {
-        apply: () => {}
-    },
-    cardExtraTurn: {
-        apply: (state) => {
-            state.turnsLeft += 1;
-            state.initialTurns += 1;
-            document.getElementById('turns-left').textContent = `${state.currentTurn} of ${state.initialTurns}`;
-            window.showMessage("Extra Turn granted from card! ⚡", "success");
-        }
-    },
-    goldBoost: {
-        apply: () => {}
-    }
-};
-
-function rollDice() {
-    const die1 = document.getElementById('die1');
-    const die2 = document.getElementById('die2');
-    die1.classList.add('rolling');
-    die2.classList.add('rolling');
-    document.getElementById('roll-button').disabled = true;
-
-    const equippedSkins = window.playerProgress.equipped || {};
-    const diceSkin = equippedSkins['dice'];
-    let cardCount = 3;
-
-    if (gameState.activeEffects.doubleRoll) {
-        cardCount = effectHandlers.doubleRoll.roll(cardCount);
-        delete gameState.activeEffects.doubleRoll;
-        window.showMessage("Double Roll activates! Four cards await thee... 🎴", "success");
-    }
-
-    setTimeout(() => {
-        fetch('/api/special-items')
-            .then(response => response.json())
-            .then(items => {
-                const item = items.find(i => i.id === diceSkin);
-                const images = item ? JSON.parse(item.images || '{}') : {};
-
-                const rollDie = () => {
-                    let result = Math.floor(Math.random() * 6) + 1;
-                    if (item && effectHandlers[item.effect]?.rollDie) {
-                        result = effectHandlers[item.effect].rollDie();
-                    }
-                    return result;
-                };
-
-                gameState.dice[0] = rollDie();
-                gameState.dice[1] = rollDie();
-                const die1Image = images[String(gameState.dice[0])] || `images/die-${gameState.dice[0]}.png`;
-                const die2Image = images[String(gameState.dice[1])] || `images/die-${gameState.dice[1]}.png`;
-                die1.querySelector('img').src = die1Image;
-                die1.querySelector('img').onerror = () => die1.querySelector('img').src = `images/die-${gameState.dice[0]}.png`;
-                die2.querySelector('img').src = die2Image;
-                die2.querySelector('img').onerror = () => die2.querySelector('img').src = `images/die-${gameState.dice[1]}.png`;
-                die1.classList.remove('rolling');
-                die2.classList.remove('rolling');
-
-                gameState.cards = [];
-                for (let i = 0; i < cardCount; i++) {
-                    window.drawCard(true);
-                }
-
-                const hasValidCombo = gameState.cards.some(card => 
-                    combinations[String(gameState.dice[0])].includes(card.slice(0, -1)) || 
-                    combinations[String(gameState.dice[1])].includes(card.slice(0, -1))
-                );
-                if (!hasValidCombo) {
-                    window.showMessage("No path to glory! The fates deny thee this turn... ⚰️", "warning");
-                    die1.style.pointerEvents = 'none';
-                    die2.style.pointerEvents = 'none';
-                    document.querySelectorAll('.card').forEach(card => card.style.pointerEvents = 'none');
-                    document.getElementById('draw-button').disabled = true;
-                    setTimeout(() => endTurn(true), 2500);
-                } else {
-                    document.getElementById('draw-button').disabled = false;
-                    die1.style.pointerEvents = 'auto';
-                    die2.style.pointerEvents = 'auto';
-                    document.querySelectorAll('.card').forEach(card => card.style.pointerEvents = 'auto');
-                    window.showMessage("The dice are cast! Choose thy fate... ⚡", "info");
-                }
-            })
-            .catch(err => {
-                console.error('Error fetching dice skin:', err);
-                gameState.dice[0] = Math.floor(Math.random() * 6) + 1;
-                gameState.dice[1] = Math.floor(Math.random() * 6) + 1;
-                die1.querySelector('img').src = `images/die-${gameState.dice[0]}.png`;
-                die2.querySelector('img').src = `images/die-${gameState.dice[1]}.png`;
-                die1.classList.remove('rolling');
-                die2.classList.remove('rolling');
-            });
-    }, 800);
-}
-
-function selectDie(dieIndex) {
-    gameState.selectedDie = String(gameState.dice[dieIndex - 1]);
-    console.log('Selected die set to:', gameState.selectedDie);
-    document.getElementById('die1').classList.toggle('selected', dieIndex === 1);
-    document.getElementById('die2').classList.toggle('selected', dieIndex === 2);
-    updateCards();
-    showMessage("Choose cards or draw more! 🃏");
-}
-
-window.drawCard = function(initial = false) {
-    let value, suit, card;
-    do {
-        value = values[Math.floor(Math.random() * values.length)];
-        suit = suits[Math.floor(Math.random() * suits.length)];
-        card = `${value}${suit}`;
-    } while (gameState.cards.includes(card));
-
-    const equippedSkins = window.playerProgress.equipped || {};
-    const skinId = equippedSkins[card];
-    const cardImage = skinId ? `images/${skinId}.png` : `images/card-${value}${suit}.png`;
-
-    gameState.cards.push(card);
-
-    const cardElement = document.createElement('div');
-    cardElement.classList.add('card');
-    const img = document.createElement('img');
-    img.src = cardImage;
-    cardElement.appendChild(img);
-    const label = document.createElement('span');
-    label.textContent = card;
-    label.classList.add('card-label');
-    cardElement.appendChild(label);
-    cardElement.onclick = () => toggleCardSelection(card, cardElement);
-    document.getElementById('cards').appendChild(cardElement);
-
-    if (!initial) {
-        cardElement.classList.add('dealing');
-        setTimeout(() => cardElement.classList.remove('dealing'), 300);
-
-        if (!gameState.selectedDie) {
-            const isValidForAnyDie = gameState.dice.some(die => 
-                combinations[String(die)].includes(value)
-            );
-            if (!isValidForAnyDie) {
-                window.showMessage("The fates reject thy draw! Turn lost... ⚰️", "warning");
-                document.querySelectorAll('.card').forEach(card => card.style.pointerEvents = 'none');
-                document.getElementById('draw-button').disabled = true;
-                setTimeout(() => endTurn(true), 2500);
-                return;
-            } else {
-                window.showMessage("A worthy draw! Choose thy die wisely... 📜", "info");
-            }
-        } else if (!combinations[gameState.selectedDie].includes(value)) {
-            window.showMessage("Thy card defies the die! Turn lost... ⚰️", "warning");
-            setTimeout(() => endTurn(true), 2500);
-            return;
-        } else {
-            window.showMessage("A fine addition! Forge thy combo... 🃏", "info");
-        }
-    }
-    if (gameState.selectedDie) updateCards();
-}
-
-function toggleCardSelection(card, element) {
-    if (!gameState.selectedDie) return;
-    const value = card.slice(0, -1);
-    if (!combinations[gameState.selectedDie].includes(value)) return;
-
-    const index = gameState.selectedCards.indexOf(card);
-    if (index === -1) {
-        gameState.selectedCards.push(card);
-        element.classList.add('selected');
-    } else {
-        gameState.selectedCards.splice(index, 1);
-        element.classList.remove('selected');
-    }
-    calculateTurnScore();
-}
-
-function updateCards() {
-    const cardElements = document.getElementById('cards').children;
-    for (let i = 0; i < cardElements.length; i++) {
-        const card = gameState.cards[i];
-        const value = card.slice(0, -1);
-        const isValid = gameState.selectedDie && combinations[gameState.selectedDie].includes(value);
-        cardElements[i].classList.toggle('valid', isValid);
-        cardElements[i].classList.toggle('invalid', !isValid && gameState.selectedDie);
-    }
 }
 
 function calculateTurnScore() {
@@ -416,62 +131,60 @@ function calculateTurnScore() {
     document.getElementById('combinations').textContent = `Selected: ${gameState.selectedCards.join(", ")} (x${multiplier.toFixed(2)})`;
 }
 
-function endTurn(failed = false) {
+async function endTurn(failed = false) {
     if (failed) {
         gameState.turnScore = 0;
     } else {
         const equippedSkins = window.playerProgress.equipped || {};
         let modifiedScore = gameState.turnScore;
 
-        gameState.selectedCards.forEach(card => {
+        for (const card of gameState.selectedCards) {
             const itemId = equippedSkins[card];
             if (itemId) {
-                fetch('/api/special-items')
-                    .then(response => response.json())
-                    .then(items => {
-                        const item = items.find(i => i.id === itemId);
-                        if (item && effectHandlers[item.effect]?.cardScore) {
-                            modifiedScore += effectHandlers[item.effect].cardScore(gameState.turnScore / gameState.selectedCards.length) - (gameState.turnScore / gameState.selectedCards.length);
-                        }
-                    });
+                const response = await fetch('/api/special-items');
+                const items = await response.json();
+                const item = items.find(i => i.id === itemId);
+                if (item && effectHandlers[item.effect]?.cardScore) {
+                    modifiedScore += effectHandlers[item.effect].cardScore(gameState.turnScore / gameState.selectedCards.length) - (gameState.turnScore / gameState.selectedCards.length);
+                }
             }
-        });
+        }
 
         const diceSkin = equippedSkins['dice'];
         if (diceSkin && gameState.selectedDie && gameState.turnScore > 0) {
-            fetch('/api/special-items')
-                .then(response => response.json())
-                .then(items => {
-                    const item = items.find(i => i.id === diceSkin);
-                    if (item) {
-                        if (effectHandlers[item.effect]?.score) {
-                            modifiedScore = effectHandlers[item.effect].score(modifiedScore);
-                        }
-                        if (effectHandlers[item.effect]?.apply) {
-                            effectHandlers[item.effect].apply(gameState);
-                        }
-                    }
-                    gameState.totalScore += modifiedScore;
-                    document.getElementById('current-score').textContent = gameState.totalScore;
-                    window.showMessage("Turn ended! Roll again! 🎲", "info");
-                });
-        } else {
-            gameState.totalScore += modifiedScore;
-            document.getElementById('current-score').textContent = gameState.totalScore;
-            window.showMessage("Turn ended! Roll again! 🎲", "info");
+            const response = await fetch('/api/special-items');
+            const items = await response.json();
+            const item = items.find(i => i.id === diceSkin);
+            if (item) {
+                if (effectHandlers[item.effect]?.score) {
+                    modifiedScore = effectHandlers[item.effect].score(modifiedScore);
+                }
+                if (effectHandlers[item.effect]?.apply) {
+                    effectHandlers[item.effect].apply(gameState);
+                }
+            }
         }
+        gameState.totalScore += modifiedScore;
     }
 
     gameState.currentTurn++;
-    gameState.turnsLeft--; // Уменьшаем ходы при каждом завершении
+    gameState.turnsLeft--;
     gameState.selectedDie = null;
     gameState.cards = [];
     gameState.selectedCards = [];
     gameState.turnScore = 0;
 
-    document.getElementById('current-turn').textContent = gameState.currentTurn;
-    document.getElementById('turns-left').textContent = `${gameState.currentTurn} of ${gameState.initialTurns}`;
-    document.getElementById('turn-score').textContent = gameState.turnScore;
+    const currentTurn = document.getElementById('current-turn');
+    if (currentTurn) currentTurn.textContent = gameState.currentTurn;
+    else console.error('current-turn element not found');
+
+    const turnsLeft = document.getElementById('turns-left');
+    if (turnsLeft) turnsLeft.textContent = `${gameState.currentTurn} of ${gameState.initialTurns}`;
+    else console.error('turns-left element not found');
+
+    const turnScore = document.getElementById('turn-score');
+    if (turnScore) turnScore.textContent = gameState.turnScore;
+    else console.error('turn-score element not found');
 
     const equippedSkins = window.playerProgress.equipped || {};
     const diceSkin = equippedSkins['dice'];
@@ -481,36 +194,61 @@ function endTurn(failed = false) {
             const item = items.find(i => i.id === diceSkin);
             const images = item ? JSON.parse(item.images || '{}') : {};
             const defaultDiceImage = diceSkin && images.default ? images.default : 'images/die-default.png';
-            document.getElementById('die1').querySelector('img').src = defaultDiceImage;
-            document.getElementById('die2').querySelector('img').src = defaultDiceImage;
-        });
-    document.getElementById('die1').classList.remove('selected');
-    document.getElementById('die2').classList.remove('selected');
-    document.getElementById('die1').style.pointerEvents = 'auto';
-    document.getElementById('die2').style.pointerEvents = 'auto';
-    document.getElementById('cards').innerHTML = "";
-    document.getElementById('combinations').textContent = "";
-    document.getElementById('roll-button').disabled = false;
-    document.getElementById('draw-button').disabled = true;
+            const die1Img = document.getElementById('die1')?.querySelector('img');
+            const die2Img = document.getElementById('die2')?.querySelector('img');
+            if (die1Img) die1Img.src = defaultDiceImage;
+            else console.error('die1 image not found');
+            if (die2Img) die2Img.src = defaultDiceImage;
+            else console.error('die2 image not found');
+        })
+        .catch(err => console.error('Error loading dice skin:', err));
+
+    const die1 = document.getElementById('die1');
+    const die2 = document.getElementById('die2');
+    if (die1) die1.classList.remove('selected');
+    else console.error('die1 element not found');
+    if (die2) die2.classList.remove('selected');
+    else console.error('die2 element not found');
+    if (die1) die1.style.pointerEvents = 'auto';
+    else console.error('die1 element not found');
+    if (die2) die2.style.pointerEvents = 'auto';
+    else console.error('die2 element not found');
+
+    const cards = document.getElementById('cards');
+    if (cards) cards.innerHTML = "";
+    else console.error('cards element not found');
+
+    const combinations = document.getElementById('combinations');
+    if (combinations) combinations.textContent = "";
+    else console.error('combinations element not found');
+
+    const rollButton = document.getElementById('roll-button');
+    if (rollButton) rollButton.disabled = false;
+    else console.error('roll-button element not found');
+
+    const drawButton = document.getElementById('draw-button');
+    if (drawButton) drawButton.disabled = true;
+    else console.error('draw-button element not found');
 
     if (gameState.turnsLeft <= 0 || gameState.totalScore >= gameState.currentLevel.target) {
         endGame();
     }
 }
 
-function backToLevelScreen() {
-    document.getElementById('game-screen').style.display = 'none';
-    document.getElementById('level-screen').style.display = 'block';
-}
 
 function endGame() {
     const won = gameState.totalScore >= gameState.currentLevel.target;
     const overlay = document.getElementById('game-end-overlay');
     const message = document.getElementById('game-end-message');
-    
-    const currentLevelNum = currentLevel.number;
+
+    if (!overlay || !message) {
+        console.error('game-end-overlay or game-end-message element not found');
+        return;
+    }
+
+    const currentLevelNum = gameState.currentLevel.number;
     let rewards = { gold: Math.round(gameState.totalScore / 10) };
-    
+
     if (gameState.activeEffects.goldBoost) {
         rewards.gold = Math.round(rewards.gold * 1.25);
         delete gameState.activeEffects.goldBoost;
@@ -567,9 +305,17 @@ function endGame() {
         document.querySelector('.overlay-content').classList.add('active');
     }, 10);
 
-    document.getElementById('roll-button').disabled = true;
-    document.getElementById('draw-button').disabled = true;
-    document.getElementById('combinations-button').disabled = true;
+    const rollButton = document.getElementById('roll-button');
+    if (rollButton) rollButton.disabled = true;
+    else console.error('roll-button element not found');
+
+    const drawButton = document.getElementById('draw-button');
+    if (drawButton) drawButton.disabled = true;
+    else console.error('draw-button element not found');
+
+    const combinationsButton = document.getElementById('combinations-button');
+    if (combinationsButton) combinationsButton.disabled = true;
+    else console.error('combinations-button element not found');
 
     if (!window.playerProgress.levelStats) window.playerProgress.levelStats = {};
     window.playerProgress.levelStats[currentLevelNum] = {
@@ -580,13 +326,18 @@ function endGame() {
     };
 
     function closeOverlay() {
-        overlay.classList.remove('active');
-        document.querySelector('.overlay-content').classList.remove('active');
-        setTimeout(() => {
-            overlay.style.display = 'none';
-            window.hideAllScreens('level-screen');
-            window.updateLevelScreen(currentLevelNum, won);
-        }, 500);
+        if (overlay) {
+            overlay.classList.remove('active');
+            const overlayContent = document.querySelector('.overlay-content');
+            if (overlayContent) overlayContent.classList.remove('active');
+            setTimeout(() => {
+                if (overlay) overlay.style.display = 'none';
+                window.hideAllScreens('level-screen');
+                window.updateLevelScreen(currentLevelNum, won);
+            }, 500);
+        } else {
+            console.error('overlay element not found in closeOverlay');
+        }
     }
 
     if (!won) {
@@ -594,17 +345,8 @@ function endGame() {
     }
 }
 
-function updateLevelScreen(levelNum, won) {
-    document.getElementById('level-stats').style.display = 'block';
-    document.getElementById('level-status').textContent = won ? "Completed" : "Failed";
-    document.getElementById('level-attempts').textContent = gameState.attempts;
-    document.getElementById('level-turns-used').textContent = currentLevel.turns - gameState.turnsLeft;
-    document.getElementById('level-gold-earned').textContent = window.playerProgress.levelStats[levelNum]?.goldEarned || 0;
-    window.updateCampaignMenu(); // Вызываем глобальную функцию из main.js
-}
-
 function showCombinations() {
-    const combosList = Object.entries(combinations).map(([die, cards]) => 
+    const combosList = Object.entries(combinations).map(([die, cards]) =>
         `Die ${die}: ${cards.join(", ")} (${die === '1' ? 150 : die === '2' ? 100 : die === '3' ? 200 : die === '4' ? 250 : die === '5' ? 250 : 300} points)`
     ).join("<br>");
     const multipliersList = [
@@ -614,10 +356,18 @@ function showCombinations() {
         "- 3 cards of the same suit: 2x",
         "- 4+ cards of the same suit: 3x"
     ].join("<br>");
-    document.getElementById('combinations-list').innerHTML = `${combosList}<br><br>${multipliersList}`;
-    document.getElementById('combinations-modal').style.display = 'flex';
+    const combinationsList = document.getElementById('combinations-list');
+    const combinationsModal = document.getElementById('combinations-modal');
+    if (combinationsList && combinationsModal) {
+        combinationsList.innerHTML = `${combosList}<br><br>${multipliersList}`;
+        combinationsModal.style.display = 'flex';
+    } else {
+        console.error('combinations-list or combinations-modal element not found');
+    }
 }
 
 function hideCombinations() {
-    document.getElementById('combinations-modal').style.display = 'none';
+    const combinationsModal = document.getElementById('combinations-modal');
+    if (combinationsModal) combinationsModal.style.display = 'none';
+    else console.error('combinations-modal element not found');
 }

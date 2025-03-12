@@ -1,5 +1,6 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 
@@ -229,16 +230,22 @@ app.get('/api/player/:walletAddress', (req, res) => {
 
 app.post('/api/create-profile', (req, res) => {
     const { walletAddress, playerName, highestLevel, completedLevels, hasSeenTutorial, hasSeenLore, levelStats, gold, inventory, equipped } = req.body;
-    console.log('Received profile data:', req.body);
-    db.run(`INSERT INTO players (walletAddress, playerName, highestLevel, completedLevels, hasSeenTutorial, hasSeenLore, levelStats, gold, inventory, equipped) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
-            [walletAddress, playerName, highestLevel, JSON.stringify(completedLevels), hasSeenTutorial, hasSeenLore, JSON.stringify(levelStats), gold, JSON.stringify(inventory), JSON.stringify(equipped)], 
-            function(err) {
-                if (err) {
-                    return res.status(500).json({ error: err.message });
-                }
-                res.json({ message: 'Profile created successfully', id: this.lastID });
-            });
+
+    if (!walletAddress || !playerName) {
+        return res.status(400).json({ error: 'Wallet address и player name обязательны' });
+    }
+    db.run(
+        `INSERT INTO players (walletAddress, playerName, highestLevel, completedLevels, hasSeenTutorial, hasSeenLore, levelStats, gold, inventory, equipped) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [walletAddress, playerName, highestLevel, JSON.stringify(completedLevels), hasSeenTutorial, hasSeenLore, JSON.stringify(levelStats), gold, JSON.stringify(inventory), JSON.stringify(equipped)],
+        function(err) {
+            if (err) {
+                console.error('Error creating profile:', err);
+                return res.status(500).json({ error: 'Ошибка при создании профиля' });
+            }
+            res.json({ message: 'Profile created successfully', id: this.lastID });
+        }
+    );
 });
 
 app.get('/api/special-items', (req, res) => {
@@ -254,6 +261,10 @@ app.get('/api/special-items', (req, res) => {
 
 app.post('/api/add-special-item', (req, res) => {
     const { id, type, name, cost, rarity, description, effect, appliesTo, images } = req.body;
+
+    if (!id || !name || !cost) {
+        return res.status(400).json({ error: 'ID, name and cost are important' });
+    }
 
     // Проверяем, существует ли уже такой ID
     db.get('SELECT id FROM special_items WHERE id = ?', [id], (err, row) => {
@@ -282,13 +293,35 @@ app.post('/api/add-special-item', (req, res) => {
     });
 });
 
+const imagesDir = path.join(__dirname, 'images');
+if (!fs.existsSync(imagesDir)) {
+    fs.mkdirSync(imagesDir);
+    console.log('Created images directory:', imagesDir);
+}
+
 // Маршрут для загрузки изображений
 app.post('/api/upload-image', upload.single('image'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
     const filePath = `/images/${req.file.filename}`;
-    res.json({ path: filePath });
+    const itemId = req.body.itemId; // Предположим, клиент отправляет ID предмета
+
+    if (!itemId) {
+        return res.status(400).json({ error: 'Item ID is required' });
+    }
+
+    db.run(
+        `UPDATE special_items SET images = ? WHERE id = ?`,
+        [JSON.stringify({ shop: filePath }), itemId],
+        (err) => {
+            if (err) {
+                console.error('Error updating image path:', err);
+                return res.status(500).json({ error: 'Ошибка при сохранении изображения' });
+            }
+            res.json({ message: 'Image uploaded and saved', path: filePath });
+        }
+    );
 });
 
 app.listen(port, () => {
