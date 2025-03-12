@@ -80,6 +80,25 @@ window.saveProgress = async function() {
     console.log('saveProgress completed');
 }
 
+function updatePlayerProfile(walletAddress, data) {
+    return fetch(`/api/player/${walletAddress}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .catch(error => console.error('Error updating profile:', error));
+}
+
+// И используйте ее после завершения туториала
+gameState.hasSeenTutorial = true;
+updatePlayerProfile(gameState.walletAddress, {
+    hasSeenTutorial: true,
+    // другие данные, которые нужно обновить
+});
+
 function calculateTurnScore() {
     if (!gameState.selectedDie) {
         console.log('No die selected');

@@ -1,3 +1,21 @@
+const images = {
+    shop: 'images/default.png', // значение по умолчанию, если изображение не загружено
+    default: 'images/default.png'
+};
+
+const formData = {
+    id: itemId,
+    type: itemType,
+    name: itemName,
+    cost: parseInt(itemCost),
+    rarity: itemRarity,
+    description: itemDescription || '',
+    effect: itemEffect || null,
+    appliesTo: itemAppliesTo || '',
+    images: images // Объект, не строка
+};
+
+
 function openAdminPanel() {
     if (window.playerProgress.walletAddress !== 'HVMaVhxKX6dLP1yLnkzH3ikRgDG1vqn2zP9PcXuYvZZH') {
         window.showMessage("Thou art not an admin! Begone! 🚫", "warning");

@@ -276,11 +276,14 @@ app.post('/api/add-special-item', (req, res) => {
             return res.status(400).send('Item with this ID already exists');
         }
 
-        // Если ID уникален, добавляем предмет
-        db.run(
-            `INSERT INTO special_items (id, type, name, cost, rarity, description, effect, appliesTo, images) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [id, type, name, cost, rarity, description, effect, appliesTo, JSON.stringify(images)],
+        const images = typeof req.body.images === 'string' 
+        ? JSON.parse(req.body.images) 
+        : req.body.images;
+        
+    db.run(
+        `INSERT INTO special_items (id, type, name, cost, rarity, description, effect, appliesTo, images) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, type, name, cost, rarity, description, effect, appliesTo, JSON.stringify(images)],
             (err) => {
                 if (err) {
                     console.error('Error inserting special item:', err);
@@ -328,4 +331,38 @@ app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
     console.log('Players table created or already exists.');
     console.log('Special items table created or already exists.');
+});
+
+app.put('/api/player/:walletAddress', (req, res) => {
+    const walletAddress = req.params.walletAddress;
+    const updates = req.body;
+    
+    const updateFields = [];
+    const updateValues = [];
+    
+    for (const [key, value] of Object.entries(updates)) {
+        updateFields.push(`${key} = ?`);
+        updateValues.push(typeof value === 'object' ? JSON.stringify(value) : value);
+    }
+    
+    if (updateFields.length === 0) {
+        return res.status(400).json({ error: 'No valid fields to update' });
+    }
+    
+    db.run(
+        `UPDATE players SET ${updateFields.join(', ')} WHERE walletAddress = ?`,
+        [...updateValues, walletAddress],
+        function(err) {
+            if (err) {
+                console.error('Error updating player:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            
+            if (this.changes === 0) {
+                return res.status(404).json({ error: 'Player not found' });
+            }
+            
+            res.json({ message: 'Player updated successfully' });
+        }
+    );
 });
