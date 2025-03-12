@@ -32,14 +32,29 @@ const wallet = {
 };
 
 function initializeWallet() {
+    console.log('Initializing wallet setup');
     const connectButton = document.getElementById('wallet-connect');
     const createButton = document.getElementById('create-profile');
     const walletAddress = document.getElementById('wallet-address');
     const addressSpan = document.getElementById('address');
     const playerNameInput = document.getElementById('player-name');
 
+    if (!connectButton) {
+        console.error('wallet-connect element not found');
+        return;
+    }
+    if (!createButton) {
+        console.error('create-profile element not found');
+        return;
+    }
+    if (!walletAddress || !addressSpan || !playerNameInput) {
+        console.error('Required profile elements not found');
+        return;
+    }
+
     connectButton.innerHTML = '<button>Connect Wallet</button>';
     connectButton.querySelector('button').addEventListener('click', async () => {
+        console.log('Connect Wallet button clicked');
         if (wallet.connected) {
             showMessage("Wallet already connected! 😊");
             return;

@@ -252,18 +252,18 @@
         </div>
         <button onclick="backToMainMenu()">Back ⬅️</button>
     </div>
-    <div id="level-screen" class="level-container" style="display: none;">
+    <div id="level-screen" style="display: none;">
         <h2>Level <span id="level-number"></span>: <span id="level-name"></span></h2>
-        <p>Goal: Earn <span id="target-score"></span> points in <span id="max-turns"></span> turns.</p>
+        <p>Target Score: <span id="target-score"></span></p>
+        <p>Max Turns: <span id="max-turns"></span></p>
         <div id="level-stats" style="display: none;">
-            <p>Status: <span id="level-status">Not Started</span></p>
-            <p>Attempts: <span id="level-attempts">0</span></p>
-            <p>Turns Used: <span id="level-turns-used">0</span></p>
-            <p>Gold Earned: <span id="level-gold-earned">0</span></p>
+            <p>Status: <span id="level-status"></span></p>
+            <p>Attempts: <span id="level-attempts"></span></p>
+            <p>Turns Used: <span id="level-turns-used"></span></p>
+            <p>Gold Earned: <span id="level-gold-earned"></span></p>
         </div>
-        <button onclick="startLevel()">Begin Quest ⚔️</button>
-        <button onclick="showLore()">Lore 📜</button>
-        <button onclick="backToCampaignMenu()">Back ⬅️</button>
+        <button id="startLevel">Begin Quest</button>
+        <button onclick="backToCampaignMenu()">Back to Campaign</button>
     </div>
     <div id="lore-screen" class="lore-container" style="display: none;">
         <h2 id="lore-title">The Tale Unfolds...</h2>
@@ -319,14 +319,13 @@
     </div>
 </div>
     <script src="scripts/utils.js"></script>
+    <script src="scripts/wallet.js"></script>
     <script src="scripts/main.js"></script>
     <script src="scripts/gameplay.js"></script>
     <script src="scripts/shop.js"></script>
     <script src="scripts/admin.js"></script>
     <script src="scripts/cards.js"></script>
     <script src="scripts/dice.js"></script>
-    <script src="scripts/levels.js"></script>
     <script src="scripts/ui.js"></script>
-    <script src="scripts/wallet.js"></script>
 </body>
 </html>

@@ -235,18 +235,43 @@ app.post('/api/create-profile', (req, res) => {
     if (!walletAddress || !playerName) {
         return res.status(400).json({ error: 'Wallet address и player name обязательны' });
     }
-    db.run(
-        `INSERT INTO players (walletAddress, playerName, highestLevel, completedLevels, hasSeenTutorial, hasSeenLore, levelStats, gold, inventory, equipped) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [walletAddress, playerName, highestLevel, JSON.stringify(completedLevels), hasSeenTutorial, hasSeenLore, JSON.stringify(levelStats), gold, JSON.stringify(inventory), JSON.stringify(equipped)],
-        function(err) {
-            if (err) {
-                console.error('Error creating profile:', err);
-                return res.status(500).json({ error: 'Ошибка при создании профиля' });
-            }
-            res.json({ message: 'Profile created successfully', id: this.lastID });
+
+    // Проверка на существование профиля
+    db.get(`SELECT walletAddress FROM players WHERE walletAddress = ?`, [walletAddress], (err, row) => {
+        if (err) {
+            console.error('Error checking player:', err);
+            return res.status(500).json({ error: 'Database error' });
         }
-    );
+
+        if (row) {
+            // Если профиль существует, обновляем его
+            db.run(
+                `UPDATE players SET playerName = ?, highestLevel = ?, completedLevels = ?, hasSeenTutorial = ?, hasSeenLore = ?, levelStats = ?, gold = ?, inventory = ?, equipped = ? WHERE walletAddress = ?`,
+                [playerName, highestLevel, JSON.stringify(completedLevels), hasSeenTutorial, hasSeenLore, JSON.stringify(levelStats), gold, JSON.stringify(inventory), JSON.stringify(equipped), walletAddress],
+                function(err) {
+                    if (err) {
+                        console.error('Error updating profile:', err);
+                        return res.status(500).json({ error: 'Ошибка при обновлении профиля' });
+                    }
+                    res.json({ message: 'Profile updated successfully', id: this.lastID });
+                }
+            );
+        } else {
+            // Если профиля нет, создаем новый
+            db.run(
+                `INSERT INTO players (walletAddress, playerName, highestLevel, completedLevels, hasSeenTutorial, hasSeenLore, levelStats, gold, inventory, equipped) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [walletAddress, playerName, highestLevel, JSON.stringify(completedLevels), hasSeenTutorial, hasSeenLore, JSON.stringify(levelStats), gold, JSON.stringify(inventory), JSON.stringify(equipped)],
+                function(err) {
+                    if (err) {
+                        console.error('Error creating profile:', err);
+                        return res.status(500).json({ error: 'Ошибка при создании профиля' });
+                    }
+                    res.json({ message: 'Profile created successfully', id: this.lastID });
+                }
+            );
+        }
+    });
 });
 
 app.get('/api/special-items', (req, res) => {

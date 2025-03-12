@@ -206,7 +206,7 @@ const effectHandlers = {
         apply: (state) => {
             state.turnsLeft += 1;
             state.initialTurns += 1; // Обновляем общее количество ходов
-            document.getElementById('turns-left').textContent = `${state.currentTurn} of ${state.initialTurns}`;
+            document.getElementById('game-max-turns').textContent = `${state.currentTurn} of ${state.initialTurns}`;
             window.showMessage("Extra Turn granted! ⚡", "success");
         }
     },
@@ -221,7 +221,7 @@ const effectHandlers = {
         apply: (state) => {
             state.turnsLeft += 1;
             state.initialTurns += 1;
-            document.getElementById('turns-left').textContent = `${state.currentTurn} of ${state.initialTurns}`;
+            document.getElementById('game-max-turns').textContent = `${state.currentTurn} of ${state.initialTurns}`;
             window.showMessage("Extra Turn granted from card! ⚡", "success");
         }
     },

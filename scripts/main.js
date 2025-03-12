@@ -1,4 +1,4 @@
-const levels = [
+window.levels = [
     { number: 1, name: "The Ruined Gates", target: 1000, turns: 10, lore1: "The mist thickens as you approach the ruined gates, a skeletal frame of what once stood proud.", lore2: "A raven watches silently from a broken tower, its eyes glinting with an unnatural knowing.", image1: "images/lore1-1.png", image2: "images/lore1-2.png" },
     { number: 2, name: "The Whispering Woods", target: 1500, turns: 10, lore1: "Twisted trees murmur secrets in the wind, their gnarled branches clawing at the sky.", lore2: "A faint glow flickers between the branches, beckoning—or warning—you onward.", image1: "images/lore2-1.png", image2: "images/lore2-2.png" },
     { number: 3, name: "The Cursed Village", target: 2000, turns: 10, lore1: "Huts stand silent, marked by claw and flame, abandoned by all but the echoes of despair.", lore2: "An eerie wail echoes through the fog, a remnant of lives lost to darkness.", image1: "images/lore3-1.png", image2: "images/lore3-2.png" },
@@ -43,9 +43,11 @@ function pageLoaded() {
             .catch(error => {
                 console.error("Error loading progress:", error);
                 showScreen('profile-screen'); // Если ошибка, показываем экран профиля
+                initializeWallet(); // Настраиваем кнопки кошелька
             });
     } else {
         showScreen('profile-screen'); // Если нет адреса кошелька, показываем профиль
+        initializeWallet(); // Настраиваем кнопки кошелька
     }
 }
 
@@ -90,7 +92,8 @@ function updateCampaignMenu() {
                 }
                 firstSpan.textContent = `Level ${level}: ${levels[level - 1].name}`;
                 lastSpan.textContent = window.playerProgress.completedLevels.includes(level) ? "Completed" : "Not Started";
-                item.onclick = () => openLevel(level);
+                // Исправляем привязку обработчика, используя IIFE для сохранения значения level
+                item.onclick = ((lvl) => () => openLevel(lvl))(level);
                 console.log('Updated level item:', level);
             } else {
                 console.error('Missing span elements in level item:', level);

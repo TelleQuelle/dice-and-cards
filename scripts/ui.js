@@ -1,3 +1,7 @@
+function showScreen(screenId) {
+    hideAllScreens(screenId);
+}
+
 function hideAllScreens(except) {
     const screens = [
         'profile-screen', 'tutorial', 'introduction', 'lore-screen',
@@ -159,6 +163,12 @@ function startCampaign() {
 }
 
 function openLevel(level) {
+    console.log('Opening level:', level);
+    if (level === undefined || level < 1 || level > levels.length) {
+        console.error('Invalid level value:', level);
+        showMessage("Invalid level selected! Please try again. 🚫");
+        return;
+    }
     if (level > window.playerProgress.highestLevel) {
         showMessage("This level is locked! Complete the previous trials first. 🔒");
         return;
@@ -177,6 +187,17 @@ function openLevel(level) {
         document.getElementById('level-gold-earned').textContent = window.playerProgress.levelStats[level].goldEarned || 0;
     } else {
         document.getElementById('level-stats').style.display = 'none';
+    }
+
+    // Добавляем обработчик для кнопки "Begin Quest"
+    const startLevelButton = document.getElementById('startLevel');
+    if (startLevelButton) {
+        startLevelButton.onclick = () => {
+            console.log('Starting level:', level);
+            startLevel(level); // Вызываем startLevel из gameplay.js с корректным level
+        };
+    } else {
+        console.error('startLevel button not found');
     }
 }
 
