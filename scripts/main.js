@@ -109,38 +109,22 @@ const itemNames = {
 };
 
 function equipItem(itemId) {
-    console.log('Equipping item:', itemId);
-    if (!window.playerProgress.equipped) window.playerProgress.equipped = {};
-    const shopItem = document.querySelector(`.shop-item[data-id="${itemId}"]`);
-    const appliesTo = shopItem ? shopItem.getAttribute('data-applies-to') : 'unknown';
-    window.playerProgress.equipped[appliesTo] = itemId;
-    const itemName = itemNames[itemId] || itemId;
-    window.showMessage(`Equipped ${itemName} for ${appliesTo}! ⚜️`, 'success');
-    window.saveProgress();
-    updateInventoryDisplay();
-}
-
-function pageLoaded() {
-    console.log('Page loaded, checking progress');
-    if (window.playerProgress.walletAddress) {
-        console.log('Found saved wallet:', window.playerProgress.walletAddress);
-        loadProgress(window.playerProgress.walletAddress).then(() => {
-            console.log('Loaded playerProgress after loadProgress:', window.playerProgress);
-            // Убираем автоматический запуск туториала
-            if (!window.playerProgress.hasSeenTutorial) {
-                window.playerProgress.hasSeenTutorial = true; // Помечаем, что туториал виден
-                saveProgress(); // Сохраняем изменения
-            }
-            startMainMenu(window.playerProgress);
-        });
+    if (window.playerProgress.inventory.includes(itemId)) {
+        const appliesTo = itemAppliesTo[itemId];
+        if (appliesTo) {
+            window.playerProgress.equipped[appliesTo] = itemId;
+            saveProgress();
+            window.showMessage(`Equipped ${itemId}! 🛡️`, "success");
+        } else {
+            console.error('No appliesTo defined for item:', itemId);
+        }
     } else {
-        console.log('No wallet found, showing profile setup');
-        showScreen('profile-setup');
+        window.showMessage("Item not in inventory! 🚫", "warning");
     }
 }
 
-// Добавляем обработчик для кнопки "View Tutorial"
 document.addEventListener('DOMContentLoaded', () => {
+    pageLoaded(); // Вызываем pageLoaded при загрузке страницы
     const viewTutorialButton = document.getElementById('view-tutorial-button');
     if (viewTutorialButton) {
         viewTutorialButton.addEventListener('click', () => {
@@ -158,30 +142,22 @@ function showTutorial() {
     showTutorialStep(currentTutorialStep);
 }
 
-window.addEventListener('load', async () => {
-    console.log('Page loaded, checking progress');
-    const savedWallet = localStorage.getItem('lastWalletAddress');
-    if (savedWallet) {
-        console.log('Found saved wallet:', savedWallet);
-        await loadProgress(savedWallet);
-        console.log('Loaded playerProgress after loadProgress:', window.playerProgress);
-        if (!window.playerProgress.hasSeenTutorial) {
-            console.log('Showing tutorial step 1');
-            showTutorialStep(1);
-        } else if (!window.playerProgress.hasSeenLore) {
-            console.log('Showing introduction');
-            hideAllScreens('introduction');
-            const intro1 = document.getElementById('intro1');
-            if (intro1) intro1.style.display = 'block';
-            else console.error('intro1 element not found');
-        } else {
-            console.log('Starting main menu with loaded progress:', window.playerProgress);
-            await startMainMenu();
-        }
+window.addEventListener('load', () => {
+    console.log('DOM fully loaded, setting up tutorial buttons');
+    const nextButtons = document.querySelectorAll('.next-step');
+    nextButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            moveToNextTutorialStep();
+        });
+    });
+    const startButton = document.getElementById('start-button');
+    if (startButton) {
+        startButton.addEventListener('click', () => {
+            console.log('Start button clicked');
+            finishTutorial();
+        });
     } else {
-        console.log('No wallet address, showing profile screen');
-        hideAllScreens('profile-screen');
-        initializeWallet();
+        console.error('start-button element not found');
     }
 });
 

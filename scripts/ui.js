@@ -50,39 +50,29 @@ function previousStep(prev) {
     showTutorialStep(prev);
 }
 
-async function finishTutorial() {
+function finishTutorial() {
     console.log('Entering finishTutorial');
-    if (window.playerProgress.hasSeenTutorial) {
-        console.log('Tutorial already finished, skipping');
-        return;
-    }
     window.playerProgress.hasSeenTutorial = true;
     console.log('Calling saveProgress from finishTutorial');
-    try {
-        await window.saveProgress();
+    saveProgress().then(() => {
         console.log('saveProgress completed in finishTutorial');
-    } catch (error) {
-        console.error('Error in saveProgress during finishTutorial:', error);
-    }
-    if (!window.playerProgress.hasSeenLore) {
-        console.log('Showing introduction from finishTutorial');
-        hideAllScreens('introduction');
-        const intro1 = document.getElementById('intro1');
-        if (intro1) {
-            intro1.style.display = 'block';
-            console.log('Introduction step 1 displayed');
-        } else {
-            console.error('intro1 element not found');
-        }
+        showIntroduction(); // Переход к экрану Introduction
+    }).catch(err => {
+        console.error('Error saving progress in finishTutorial:', err);
+        showIntroduction(); // Продолжаем даже при ошибке сохранения
+    });
+}
+
+function showIntroduction() {
+    console.log('Showing introduction from finishTutorial');
+    showScreen('introduction');
+    const introStep = document.getElementById('introduction-step-1');
+    if (introStep) {
+        introStep.style.display = 'block';
     } else {
-        console.log('Calling startMainMenu from finishTutorial');
-        try {
-            await startMainMenu();
-        } catch (error) {
-            console.error('Error in startMainMenu from finishTutorial:', error);
-        }
+        console.error('introduction-step-1 element not found');
     }
-    console.log('finishTutorial completed');
+    console.log('Introduction step 1 displayed');
 }
 
 function nextIntro(next) {

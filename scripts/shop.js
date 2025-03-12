@@ -17,8 +17,20 @@ async function updateShopDisplay() {
         console.log('Shop screen found, updating display');
         const response = await fetch('/api/special-items');
         const items = await response.json();
-        const shopItemsContainer = document.getElementById('shop-items');
-        shopItemsContainer.innerHTML = '';
+        const cardSkinsContainer = document.getElementById('card-skins');
+        const diceSkinsContainer = document.getElementById('dice-skins');
+        const specialCardsContainer = document.getElementById('special-cards');
+        const specialDiceContainer = document.getElementById('special-dice');
+
+        if (!cardSkinsContainer || !diceSkinsContainer || !specialCardsContainer || !specialDiceContainer) {
+            console.error('One or more shop category containers not found');
+            return;
+        }
+
+        cardSkinsContainer.innerHTML = '';
+        diceSkinsContainer.innerHTML = '';
+        specialCardsContainer.innerHTML = '';
+        specialDiceContainer.innerHTML = '';
 
         if (!response.ok) {
             console.error('Failed to fetch special items:', response.status);
@@ -32,12 +44,10 @@ async function updateShopDisplay() {
             return;
         }
 
-
         items.forEach(item => {
             const isSpecial = item.description || item.effect;
             const itemElement = document.createElement('div');
             itemElement.className = 'shop-item';
-
             const images = JSON.parse(item.images || '{}');
             const imageSrc = images.shop || '/images/dice-skin-1.png';
             itemElement.innerHTML = `
@@ -48,7 +58,16 @@ async function updateShopDisplay() {
                 <button onclick="buyItem('${item.id}', ${item.cost}, '${item.name}')">Buy</button>
             `;
             itemElement.setAttribute('data-id', item.id);
-            shopItemsContainer.appendChild(itemElement);
+
+            if (item.type === 'card') {
+                cardSkinsContainer.appendChild(itemElement);
+            } else if (item.type === 'dice' && !isSpecial) {
+                diceSkinsContainer.appendChild(itemElement);
+            } else if (item.type === 'card' && isSpecial) {
+                specialCardsContainer.appendChild(itemElement);
+            } else if (item.type === 'dice' && isSpecial) {
+                specialDiceContainer.appendChild(itemElement);
+            }
         });
     }
 }
