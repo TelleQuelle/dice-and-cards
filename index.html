@@ -53,7 +53,7 @@
                 <h2>Ready to Begin? ⚔️</h2>
                 <p>You’ve got the basics down! Roll dice, pick cards, score points, and watch out for risks. Easy, yet thrilling! 😄</p>
                 <p>The adventure awaits with dark castles, epic quests, and a touch of medieval magic. Ready to test your fate?</p>
-                <p>Hit “Start” to jump in, или “Skip” if you’re feeling bold! Let’s go! 🏹</p>
+                <p>Hit “Start” to jump in, or “Skip” if you’re feeling bold! Let’s go! 🏹</p>
                 <button onclick="previousStep(3)">Previous</button>
                 <button id="startTutorialBtn">Start 🚀</button>
                 <button id="skipTutorialBtn">Skip</button>
@@ -64,7 +64,7 @@
         <div id="introduction" class="introduction-container" style="display: none;">
             <!-- Экран 1 -->
             <div class="intro-step" id="intro1">
-                <img src="images/intro1.png" alt="Dark Castle" class="intro-image">
+                <img src="/images/intro1.png" alt="Dark Castle" class="intro-image">
                 <h2>The Fallen Kingdom</h2>
                 <p>In a land shrouded in mist, a once-mighty kingdom lies in ruins. 🏰</p>
                 <p>Legends speak of a cursed deck of cards and enchanted dice, wielded by a forgotten sorcerer to challenge fate itself. ⚔️</p>
@@ -74,7 +74,7 @@
     
             <!-- Экран 2 -->
             <div class="intro-step" id="intro2" style="display: none;">
-                <img src="images/intro2.png" alt="Mysterious Figure" class="intro-image">
+                <img src="/images/intro2.png" alt="Mysterious Figure" class="intro-image">
                 <h2>The Sorcerer’s Challenge</h2>
                 <p>A shadowy figure whispers from the void: “Prove your worth, mortal.” 🌑</p>
                 <p>With every roll and every card, you’ll face destiny head-on. The stakes are high, but the rewards are greater. 💰</p>
@@ -86,7 +86,7 @@
 
         <!-- Главное меню -->
         <div id="main-menu" class="menu-container" style="display: none;">
-            <img src="images/menu-bg.png" alt="Medieval Banner" class="menu-image">
+            <img src="/images/menu-bg.png" alt="Medieval Banner" class="menu-image">
             <h1 id="main-menu-title">Dice and Cards: Medieval Quest</h1>
             <p>Choose your path, wanderer... 🏰</p>
             <p>Gold: <span id="main-menu-gold">0</span></p>
@@ -98,10 +98,10 @@
             <button onclick="disconnectWallet()">Disconnect Wallet 🔌</button>
             <div class="social-icons">
                 <a href="https://discord.gg/tdMWdrwCSD" target="_blank">
-                    <img src="images/discord-icon.png" alt="Discord" class="social-icon">
+                    <img src="/images/discord-icon.png" alt="Discord" class="social-icon">
                 </a>
                 <a href="https://x.com/Nanti_NFT" target="_blank">
-                    <img src="images/twitter-icon.png" alt="Twitter" class="social-icon">
+                    <img src="/images/twitter-icon.png" alt="Twitter" class="social-icon">
                 </a>
             </div>
         </div>
@@ -278,8 +278,8 @@
         <div class="dice-area">
             <h3>Dice 🎲</h3>
             <div id="dice">
-                <div id="die1" class="die" onclick="selectDie(1)"><img src="images/die-default.png" alt="Die 1" class="die-image"></div>
-                <div id="die2" class="die" onclick="selectDie(2)"><img src="images/die-default.png" alt="Die 2" class="die-image"></div>
+                <div id="die1" class="die" onclick="selectDie(1)"><img src="/images/die-default.png" alt="Die 1" class="die-image"></div>
+                <div id="die2" class="die" onclick="selectDie(2)"><img src="/images/die-default.png" alt="Die 2" class="die-image"></div>
             </div>
             <button onclick="rollDice()" id="roll-button">Roll Dice</button>
         </div>

@@ -208,8 +208,9 @@ app.get('/api/player/:walletAddress', (req, res) => {
     db.get(`SELECT * FROM players WHERE walletAddress = ?`, [walletAddress], (err, row) => {
         if (err) {
             console.error('Error fetching player:', err.message);
-            res.status(500).send('Database error');
-        } else if (row) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (row) {
             res.status(200).json({
                 walletAddress: row.walletAddress,
                 playerName: row.playerName,
@@ -223,7 +224,7 @@ app.get('/api/player/:walletAddress', (req, res) => {
                 equipped: JSON.parse(row.equipped || '{}')
             });
         } else {
-            res.status(404).send('Player not found');
+            res.status(404).json({ error: 'Player not found' });
         }
     });
 });
@@ -308,23 +309,32 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
         return res.status(400).json({ error: 'No file uploaded' });
     }
     const filePath = `/images/${req.file.filename}`;
-    const itemId = req.body.itemId; // Предположим, клиент отправляет ID предмета
+    const itemId = req.body.itemId;
+    const imageKey = req.body.imageKey || 'shop'; // Ключ изображения, например 'shop', 'default'
 
     if (!itemId) {
         return res.status(400).json({ error: 'Item ID is required' });
     }
 
-    db.run(
-        `UPDATE special_items SET images = ? WHERE id = ?`,
-        [JSON.stringify({ shop: filePath }), itemId],
-        (err) => {
-            if (err) {
-                console.error('Error updating image path:', err);
-                return res.status(500).json({ error: 'Ошибка при сохранении изображения' });
-            }
-            res.json({ message: 'Image uploaded and saved', path: filePath });
+    db.get('SELECT images FROM special_items WHERE id = ?', [itemId], (err, row) => {
+        if (err) {
+            console.error('Error fetching item:', err);
+            return res.status(500).json({ error: 'Database error' });
         }
-    );
+        let images = row ? JSON.parse(row.images || '{}') : {};
+        images[imageKey] = filePath;
+        db.run(
+            'UPDATE special_items SET images = ? WHERE id = ?',
+            [JSON.stringify(images), itemId],
+            (err) => {
+                if (err) {
+                    console.error('Error updating image path:', err);
+                    return res.status(500).json({ error: 'Ошибка при сохранении изображения' });
+                }
+                res.json({ message: 'Image uploaded and saved', path: filePath });
+            }
+        );
+    });
 });
 
 app.listen(port, () => {

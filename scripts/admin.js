@@ -1,5 +1,9 @@
-const images = {
-    shop: 'images/default.png', // значение по умолчанию, если изображение не загружено
+// Объявляем переменные в начале файла
+let itemId, itemType, itemName, itemCost, itemRarity, itemDescription, itemEffect, itemAppliesTo;
+
+// Инициализируем images как пустой объект
+let images = {
+    shop: 'images/default.png',
     default: 'images/default.png'
 };
 

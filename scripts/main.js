@@ -28,6 +28,27 @@ window.playerProgress = window.playerProgress || {
     equipped: {}
 };
 
+// Функция, которая будет вызываться при загрузке страницы
+function pageLoaded() {
+    console.log("Page fully loaded");
+    if (localStorage.getItem('walletAddress')) {
+        const walletAddress = localStorage.getItem('walletAddress');
+        fetch(`/api/player/${walletAddress}`)
+            .then(response => response.json())
+            .then(data => {
+                window.playerProgress = data;
+                console.log("Player progress loaded:", data);
+                showScreen('main-menu'); // Переход на главное меню после загрузки
+            })
+            .catch(error => {
+                console.error("Error loading progress:", error);
+                showScreen('profile-screen'); // Если ошибка, показываем экран профиля
+            });
+    } else {
+        showScreen('profile-screen'); // Если нет адреса кошелька, показываем профиль
+    }
+}
+
 function debugScreenStates() {
     console.log('Profile:', document.getElementById('profile-screen')?.style.display);
     console.log('Tutorial:', document.getElementById('tutorial')?.style.display);
@@ -124,16 +145,8 @@ function equipItem(itemId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    pageLoaded(); // Вызываем pageLoaded при загрузке страницы
-    const viewTutorialButton = document.getElementById('view-tutorial-button');
-    if (viewTutorialButton) {
-        viewTutorialButton.addEventListener('click', () => {
-            console.log('View Tutorial button clicked');
-            showTutorial();
-        });
-    } else {
-        console.error('view-tutorial-button element not found');
-    }
+    pageLoaded(); // Инициализация страницы
+    setupTutorialButtons(); // Настройка кнопок туториала
 });
 
 function showTutorial() {
@@ -150,7 +163,7 @@ window.addEventListener('load', () => {
             moveToNextTutorialStep();
         });
     });
-    const startButton = document.getElementById('start-button');
+    const startButton = document.getElementById("startTutorialBtn");
     if (startButton) {
         startButton.addEventListener('click', () => {
             console.log('Start button clicked');
@@ -169,6 +182,7 @@ window.onerror = (msg, url, lineNo, columnNo, error) => {
 function setupTutorialButtons() {
     const startBtn = document.getElementById('startTutorialBtn');
     const skipBtn = document.getElementById('skipTutorialBtn');
+    
     if (startBtn) {
         startBtn.addEventListener('click', async () => {
             console.log('Start button clicked');
@@ -178,9 +192,8 @@ function setupTutorialButtons() {
                 console.error('Error on Start button:', error);
             }
         });
-    } else {
-        console.error('startTutorialBtn not found');
     }
+    
     if (skipBtn) {
         skipBtn.addEventListener('click', async () => {
             console.log('Skip button clicked');
@@ -190,16 +203,8 @@ function setupTutorialButtons() {
                 console.error('Error on Skip button:', error);
             }
         });
-    } else {
-        console.error('skipTutorialBtn not found');
     }
 }
-
-// Вызываем после загрузки страницы
-window.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM fully loaded, setting up tutorial buttons');
-    setupTutorialButtons();
-});
 
 function addImageField() {
     const container = document.getElementById('image-upload-fields');
@@ -213,4 +218,24 @@ function addImageField() {
         <input type="file" class="image-upload" data-key="${key}" accept="image/png">
     `;
     container.appendChild(div);
+}
+
+function saveTutorialProgress() {
+    window.playerProgress.hasSeenTutorial = true;
+    fetch(`/api/player/${window.playerProgress.walletAddress}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            hasSeenTutorial: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Tutorial progress saved:", data);
+    })
+    .catch(error => {
+        console.error("Error saving tutorial progress:", error);
+    });
 }
